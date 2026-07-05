@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全网资产检索门户 - 江城创客云中心</title>
+    <style>
+        /* 基础与科技感暗黑主题重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, 'PingFang SC', monospace; }
+        body { 
+            background-color: #050508; 
+            color: #8be9fd; 
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            /* 科技感网格背景 */
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* 扫描线动画遮罩 */
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 240, 255, 0.02) 51%);
+            background-size: 100% 4px; pointer-events: none; z-index: 999;
+        }
+
+        /* 顶部导航 */
+        .topbar {
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 5, 8, 0.9);
+            backdrop-filter: blur(5px);
+        }
+        .logo { font-size: 20px; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 10px; letter-spacing: 2px; }
+        .logo::before { content: '■'; color: #00f0ff; font-size: 24px; animation: blink 2s infinite; }
+        .sys-status { font-size: 12px; color: #50fa7b; border: 1px solid #50fa7b; padding: 4px 10px; border-radius: 2px; }
+        
+        .login-btn-top {
+            background: transparent; border: 1px solid #00f0ff; color: #00f0ff; padding: 5px 15px; cursor: pointer; transition: all 0.3s;
+        }
+        .login-btn-top:hover { background: rgba(0, 240, 255, 0.2); }
+
+        /* 主检索区域 (Hero Section) */
+        .search-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px;
+            margin-top: -50px;
+        }
+        .search-title {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+        .search-subtitle { font-size: 14px; color: #6272a4; margin-bottom: 40px; }
+
+        /* 搜索框 UI */
+        .search-box {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            display: flex;
+        }
+        .search-input {
+            width: 100%;
+            background: rgba(0, 240, 255, 0.02);
+            border: 1px solid #00f0ff;
+            color: #fff;
+            padding: 18px 25px;
+            font-size: 18px;
+            outline: none;
+            box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.1);
+            transition: all 0.3s;
+        }
+        .search-input:focus { box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.3), 0 0 15px rgba(0, 240, 255, 0.2); }
+        .search-input::placeholder { color: #44475a; }
+        
+        .search-btn {
+            background: #00f0ff;
+            color: #000;
+            border: none;
+            padding: 0 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .search-btn:hover { background: #fff; box-shadow: 0 0 20px #00f0ff; }
+
+        /* 检索反馈信息 */
+        .feedback-msg { margin-top: 20px; font-size: 14px; height: 20px; color: #ff5555; text-shadow: 0 0 5px rgba(255,85,85,0.5); display: none; }
+        .feedback-msg.success { color: #50fa7b; text-shadow: 0 0 5px rgba(80,250,123,0.5); }
+
+        /* 底部关联公告墙 */
+        .bulletin-board {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto 50px;
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .bulletin-header {
+            font-size: 14px;
+            color: #8be9fd;
+            border-bottom: 1px dashed rgba(0, 240, 255, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .bulletin-list { list-style: none; }
+        .bulletin-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 13px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            color: #bd93f9;
+        }
+        .bulletin-list li:last-child { border-bottom: none; }
+        .log-time { color: #6272a4; width: 150px; flex-shrink: 0; }
+        
+        .alert-row { color: #ff5555 !important; background: rgba(255, 85, 85, 0.05); }
+        .alert-row .log-time { color: #ffb86c; }
+        .alert-tag { background: #ff5555; color: #000; padding: 2px 5px; font-size: 11px; margin-right: 8px; font-weight: bold; }
+        
+        .update-link { color: #8be9fd; text-decoration: underline; cursor: pointer; transition: color 0.3s; }
+        .update-link:hover { color: #fff; }
+
+        /* 登录弹窗 */
+        .login-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .login-box {
+            background: #0d1117; border: 1px solid #00f0ff; padding: 30px; width: 350px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); position: relative;
+        }
+        .close-btn {
+            position: absolute; top: 10px; right: 15px; color: #6272a4; cursor: pointer; font-size: 18px;
+        }
+        .close-btn:hover { color: #fff; }
+        .login-title { color: #fff; font-size: 18px; margin-bottom: 20px; border-bottom: 1px dashed #6272a4; padding-bottom: 10px; }
+        .login-input {
+            width: 100%; background: #000; border: 1px solid #6272a4; color: #fff; padding: 10px; margin-bottom: 15px; outline: none;
+        }
+        .login-input:focus { border-color: #00f0ff; }
+        .login-submit {
+            width: 100%; background: #00f0ff; color: #000; border: none; padding: 10px; font-weight: bold; cursor: pointer;
+        }
+        .login-submit:hover { background: #fff; }
+        .login-error { color: #ff5555; font-size: 12px; margin-bottom: 10px; display: none; }
+
+        @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <header class="topbar">
+        <div class="logo">JC-CLOUD // 江城创客云</div>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div class="sys-status" id="sysStatus">未登录 (GUEST)</div>
+            <button class="login-btn-top" id="topLoginBtn">ADMIN LOGIN</button>
+        </div>
+    </header>
+
+    <main class="search-container">
+        <div class="search-title">全网资产态势感知引擎</div>
+        <div class="search-subtitle">Global Asset Situation Awareness Engine v4.0</div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" class="search-input" placeholder="请输入需要查询的托管项目名称 / 容器节点 ID..." autocomplete="off">
+            <button id="searchBtn" class="search-btn">检索 SCAN</button>
+        </div>
+        
+        <div id="feedbackMsg" class="feedback-msg"></div>
+    </main>
+
+    <section class="bulletin-board">
+        <div class="bulletin-header">
+            <span>&gt;_ 近期全网核心运行日志 (System Broadcasts)</span>
+            <span>Live Sync</span>
+        </div>
+        <ul class="bulletin-list">
+            <li>
+                <div class="log-time">[2026-07-03 14:22:01]</div>
+                <div>[INFO] 园区B区地下机房物理断电清退作业已由底层网关接管，算力回收中。</div>
+            </li>
+            
+            <li class="alert-row">
+                <div class="log-time">[2026-07-01 02:14:45]</div>
+                <div>
+                    <span class="alert-tag">CRITICAL</span> 
+                    异常通报：底层主干网侦测到大型情感计算模块发生自发性数据逃逸事件。目标展现出极高的人类社交拟合伪装，伦理控制局防火墙正在重构。
+                </div>
+            </li>
+            
+            <li>
+                <div class="log-time">[2026-06-28 09:00:00]</div>
+                <div>[NOTICE] 云原生算力节点夏季扩容与异地灾备演练公告。</div>
+            </li>
+            
+            <li>
+                <div class="log-time">[2026-06-15 11:34:12]</div>
+                <div>[INFO] 拦截到未知端口 (Port: 8080) 的高频气象数据模拟请求，已执行宽带限流。</div>
+            </li>
+            
+            <li>
+                <div class="log-time">[2026-06-01 10:00:00]</div>
+                <!-- 此处的详情跳转也做了 Base64 加密 -->
+                <div>[SYSTEM] 态势感知引擎 v4.0 版本更新说明。 <span class="update-link" onclick="sysRedirect(event, 'Z2VuZ3hpbnJpemhpLmh0bWw=')">查看详情 [Release Notes]</span></div>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 登录弹窗 -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <span class="close-btn" id="closeLoginBtn">×</span>
+            <div class="login-title">管理员身份验证</div>
+            <input type="text" id="adminUser" class="login-input" placeholder="Username (Admin ID)" autocomplete="off">
+            <input type="password" id="adminPwd" class="login-input" placeholder="Password / 访问令牌" autocomplete="off">
+            <div class="login-error" id="loginError">身份验证失败，拒绝访问。</div>
+            <button class="login-submit" id="submitLoginBtn">VERIFY</button>
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const feedbackMsg = document.getElementById('feedbackMsg');
+        const topLoginBtn = document.getElementById('topLoginBtn');
+        const loginModal = document.getElementById('loginModal');
+        const closeLoginBtn = document.getElementById('closeLoginBtn');
+        const submitLoginBtn = document.getElementById('submitLoginBtn');
+        const adminUser = document.getElementById('adminUser');
+        const adminPwd = document.getElementById('adminPwd');
+        const loginError = document.getElementById('loginError');
+        const sysStatus = document.getElementById('sysStatus');
+
+        let isLoggedIn = false;
+
+        // 【安全核心】通用的解密函数，用于还原 Base64 (兼容中文)
+        function decodeData(b64) {
+            try {
+                return decodeURIComponent(escape(atob(b64)));
+            } catch(e) {
+                return '';
+            }
+        }
+
+        // 外部日志链接跳转逻辑
+        function sysRedirect(event, token) {
+            event.preventDefault(); 
+            const destUrl = decodeData(token);
+            if(destUrl) window.open(destUrl, '_blank');
+        }
+
+        // 登录控制
+        topLoginBtn.addEventListener('click', () => {
+            if(!isLoggedIn) {
+                loginModal.style.display = 'flex';
+                loginError.style.display = 'none';
+                adminUser.value = '';
+                adminPwd.value = '';
+                adminUser.focus();
+            } else {
+                isLoggedIn = false;
+                sysStatus.innerText = '未登录 (GUEST)';
+                topLoginBtn.innerText = 'ADMIN LOGIN';
+                feedbackMsg.style.display = 'none';
+                searchInput.value = '';
+            }
+        });
+
+        closeLoginBtn.addEventListener('click', () => {
+            loginModal.style.display = 'none';
+        });
+
+        function doLogin() {
+            const user = adminUser.value.trim();
+            const pwd = adminPwd.value.trim();
+            
+            // 
+            if (btoa(user) === 'YWRtaW4=' && btoa(pwd) === 'amNfY2xvdWRfMjAyNg==') {
+                isLoggedIn = true;
+                loginModal.style.display = 'none';
+                sysStatus.innerText = 'ADMIN_AUTH | 权限：最高';
+                topLoginBtn.innerText = 'LOGOUT';
+            } else {
+                loginError.style.display = 'block';
+                document.querySelector('.login-box').style.transform = 'translateX(-10px)';
+                setTimeout(() => document.querySelector('.login-box').style.transform = 'translateX(10px)', 100);
+                setTimeout(() => document.querySelector('.login-box').style.transform = 'translateX(0)', 200);
+            }
+        }
+
+        submitLoginBtn.addEventListener('click', doLogin);
+        adminPwd.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') doLogin();
+        });
+
+        // ================= 核心检索逻辑与全 Base64 加密字典 =================
+        function executeSearch() {
+            if (!isLoggedIn) {
+                feedbackMsg.style.display = 'block';
+                feedbackMsg.className = 'feedback-msg'; 
+                feedbackMsg.innerText = '[!] 拒绝访问：该操作需要管理员权限。请先登录。';
+                return;
+            }
+
+            const query = searchInput.value.trim().toLowerCase();
+            if (query === '') return;
+
+            // 将用户输入的搜索词转换为安全的 Base64
+            const encryptedQuery = btoa(unescape(encodeURIComponent(query)));
+
+            feedbackMsg.style.display = 'block';
+            feedbackMsg.className = 'feedback-msg'; 
+            feedbackMsg.innerText = '正在全网网段扫描，请稍候...';
+
+            setTimeout(() => {
+                // 
+                // 
+                const secretMap = {
+                    // 
+                    'YWxldGhlaWE=': {
+                        url: 'Y2xvdWRfY2VudGVyLmh0bWw=',
+                        msg: 'W+KcmV0g6LWE5Lqn6ZSB5a6a77yaUHJvamVjdCBBbGV0aGVpYeOAguajZ+WcqOeqgeegtOaymeebkumYsum6v++8jOmHjeWumueQkeiHt+mhueebruiQkOihjOaXpeW/ly4uLg=='
+                    },
+                };
+
+                const targetData = secretMap[encryptedQuery];
+
+                if (targetData) {
+                    // 命中：解密提示语
+                    feedbackMsg.classList.add('success');
+                    feedbackMsg.innerText = decodeData(targetData.msg);
+                    
+                    // 解密网址并跳转
+                    setTimeout(() => { window.location.href = decodeData(targetData.url); }, 1500);
+                } else {
+                    // 未命中
+                    feedbackMsg.innerText = `[×] 检索失败：未找到名为 '${searchInput.value}' 的活动项目，或该资产已被物理熔断。`;
+                    searchInput.value = '';
+                }
+            }, 800);
+        }
+
+        searchBtn.addEventListener('click', executeSearch);
+
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeSearch();
+            }
+        });
+    </script>
+</body>
+</html>

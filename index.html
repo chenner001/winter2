@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最遥远的距离 - 锁屏</title>
+    <style>
+        /* 基础重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            background-color: #000;
+            /* 设置桌面壁纸作为底层背景 */
+            background-image: url('桌面.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* 锁屏主容器 (毛玻璃效果) */
+        .lock-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            /* 半透明黑色遮罩 + 强烈的毛玻璃模糊，透出底层桌面.png */
+            background: rgba(15, 18, 25, 0.45);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10vh;
+            transition: transform 0.8s cubic-bezier(0.5, 0, 0, 1), opacity 0.8s ease-in-out;
+            z-index: 10;
+        }
+
+        /* 细微的背景噪点/纹理，增加质感 */
+        .lock-screen::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.04"/%3E%3C/svg%3E');
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 时间与日期 */
+        .clock-container {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 50px;
+            cursor: default;
+            user-select: none;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .time {
+            font-size: 6rem;
+            font-weight: 200;
+            letter-spacing: -2px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .date {
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            opacity: 0.85;
+        }
+
+        /* 消息通知区域 */
+        .notifications-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            max-width: 480px;
+            padding: 0 20px;
+        }
+
+        /* 单个消息卡片 */
+        .notification-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 16px 20px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification-card:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 卡片光效 */
+        .notification-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 50%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent);
+            transform: skewX(-20deg);
+            transition: 0.5s;
+        }
+        .notification-card:hover::after {
+            left: 150%;
+        }
+
+        .notif-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            opacity: 0.85;
+        }
+
+        .notif-app {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .notif-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: rgba(255,255,255,0.95);
+        }
+
+        .notif-body {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.75);
+            text-align: justify;
+            word-wrap: break-word;
+        }
+
+        .highlight {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* 折叠消息按钮 */
+        .more-notif-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px;
+            padding: 12px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .more-notif-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        /* 隐藏的鸣谢卡片 */
+        .hidden-notif {
+            display: none;
+        }
+
+        /* 展开动画 */
+        @keyframes slideDownFade {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden-notif.show {
+            display: block;
+            animation: slideDownFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        /* 底部解锁提示 */
+        .unlock-hint {
+            position: absolute;
+            bottom: 40px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .unlock-hint svg {
+            width: 20px;
+            height: 20px;
+            fill: rgba(255, 255, 255, 0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-5px); }
+        }
+
+        /* 动画执行类 */
+        .slide-up {
+            transform: translateY(-100vh);
+            opacity: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 锁屏主界面 -->
+    <div class="lock-screen" id="lockScreen">
+        
+        <!-- 时钟 -->
+        <div class="clock-container">
+            <div class="time" id="currentTime">00:00</div>
+            <div class="date" id="currentDate">11月18日 星期二</div>
+        </div>
+
+        <!-- 消息通知栏 -->
+        <div class="notifications-container">
+            
+            <!-- 折叠消息按钮 (移至最上方) -->
+            <div class="more-notif-btn" id="moreBtn" onclick="showMoreNotif(event)">
+                1 条较早的通知 (音乐与素材授权) ...
+            </div>
+
+            <!-- 隐藏的鸣谢 (点击也会触发解锁) -->
+            <div class="notification-card hidden-notif" id="creditNotif" onclick="unlockSystem()">
+                <div class="notif-header">
+                    <div class="notif-app"><span>🎵</span> 音乐授权</div>
+                    <span>3 分钟前</span>
+                </div>
+                <div class="notif-title">BGM 来源鸣谢</div>
+                <div class="notif-body" style="font-size: 12px; line-height: 1.5; color: rgba(255,255,255,0.6);">
+                    Music promoted by: https://www.chosic.com/free-music/all/<br><br>
+                    <span class="highlight">Demised To Shield</span> by Ghostrifter Official | https://soundcloud.com/ghostrifter-official<br>
+                    Creative Commons CC BY-SA 3.0<br>
+                    https://creativecommons.org/licenses/by-sa/3.0/<br><br>
+                    <span class="highlight">Spring Autumn Sunset</span> by Artificial.Music | https://soundcloud.com/artificial-music/<br>
+                    Creative Commons CC BY 3.0<br>
+                    https://creativecommons.org/licenses/by/3.0/
+                </div>
+            </div>
+
+            <!-- 第一条消息：游戏名 -->
+            <div class="notification-card" onclick="unlockSystem()">
+                <div class="notif-header">
+                    <div class="notif-app"><span>✉️</span> 信息</div>
+                    <span>刚刚</span>
+                </div>
+                <div class="notif-title">《最遥远的距离》</div>
+                <div class="notif-body">
+                </div>
+            </div>
+
+            <!-- 第二条消息：开发者声明 -->
+            <div class="notification-card" onclick="unlockSystem()">
+                <div class="notif-header">
+                    <div class="notif-app"><span>⚠️</span> 游玩须知</div>
+                    <span>1 分钟前</span>
+                </div>
+                <div class="notif-title">系统声明与指南</div>
+                <div class="notif-body">
+                    本网页解密互动游戏剧情<span class="highlight">纯属虚构</span>，本作品内所使用的所有图片，均由 AI 辅助生成工具进行艺术化渲染以及创作者本人拍摄。<br>
+                    通关全程<span class="highlight">所有线索与彩蛋均隐藏在正常的页面交互与搜索中，请在页面上尽情探索。无需查看网页源代码与修改网页后缀</span>。建议开启浏览器<span class="highlight">全屏模式</span>以获得最佳沉浸体验。<br>
+                    本游戏无页码。游玩时间约1小时。<br>
+                    特别感谢梦江南@小熊猫在哪里 提供技术支持与内测，联系作者小红书@余诗恒。<br>
+                    如果你准备好了，请解锁屏幕，祝你早日找到他。
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 底部上滑提示 -->
+        <div class="unlock-hint" onclick="unlockSystem()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/></svg>
+            点击消息或上滑以解锁
+        </div>
+
+    </div>
+
+    <script>
+        // --- 实时时钟逻辑 ---
+        function updateClock() {
+            const now = new Date();
+            
+            // 更新时间 HH:MM
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('currentTime').innerText = `${hours}:${minutes}`;
+            
+            // 更新日期
+            const options = { month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('currentDate').innerText = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 展开隐藏消息逻辑 ---
+        function showMoreNotif(event) {
+            // 阻止事件冒泡，防止误触解锁
+            event.stopPropagation(); 
+            
+            const moreBtn = document.getElementById('moreBtn');
+            const creditNotif = document.getElementById('creditNotif');
+            
+            moreBtn.style.display = 'none'; // 隐藏按钮
+            creditNotif.classList.add('show'); // 展现卡片
+        }
+
+        // --- 解锁与页面跳转逻辑 ---
+        let isUnlocking = false;
+
+        function unlockSystem() {
+            if (isUnlocking) return; // 防止重复点击
+            isUnlocking = true;
+
+            const lockScreen = document.getElementById('lockScreen');
+            
+            // 添加上滑动画类
+            lockScreen.classList.add('slide-up');
+
+            // 监听整个屏幕的上滑事件 (支持触屏滑动解锁)
+            // 等待动画结束 (800ms) 后，跳转到桌面
+            setTimeout(() => {
+                window.location.href = 'desktop.html';
+            }, 800);
+        }
+
+        // --- 支持触屏/鼠标拖拽上滑解锁 (增加互动真实感) ---
+        let startY = 0;
+
+        document.addEventListener('touchstart', e => {
+            startY = e.touches[0].clientY;
+        }, {passive: true});
+
+        document.addEventListener('touchmove', e => {
+            if (isUnlocking) return;
+            const currentY = e.touches[0].clientY;
+            // 如果向上滑动超过 50px，则触发解锁
+            if (startY - currentY > 50) {
+                unlockSystem();
+            }
+        }, {passive: true});
+
+        // 监听滚轮向上滚动也可解锁
+        document.addEventListener('wheel', e => {
+            if (e.deltaY > 0 && !isUnlocking) {
+                unlockSystem();
+            }
+        });
+
+    </script>
+</body>
+</html>

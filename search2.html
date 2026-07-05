@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浮空之境 - Search</title>
+    <style>
+        /* 基础重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #ffffff; 
+            color: #202124; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
+            overflow-x: hidden;
+        }
+
+        /* --- 顶部固定导航栏 --- */
+        .header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 20px 30px 0 30px;
+            border-bottom: 1px solid #ebebeb;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* 纯净版 Search Logo */
+        .logo {
+            font-size: 24px;
+            font-weight: 500;
+            color: #5f6368;
+            letter-spacing: 1px;
+            margin-right: 40px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        /* 顶部的胶囊搜索框 */
+        .search-box {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 690px;
+            height: 44px;
+            background: #fff;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 0 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s;
+        }
+        .search-box:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #202124;
+            padding-left: 10px;
+        }
+
+        /* 搜索框内的清理图标 */
+        .clear-btn {
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 10px;
+            border-right: 1px solid #dfe1e5;
+        }
+        .search-icon-small {
+            padding-left: 15px;
+            color: #4285f4;
+            cursor: pointer;
+        }
+
+        /* 分类导航 */
+        .nav-tabs {
+            display: flex;
+            gap: 25px;
+            margin-left: 130px; /* 对齐搜索框 */
+            font-size: 14px;
+            color: #5f6368;
+        }
+        .nav-tab {
+            padding-bottom: 12px;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            font-weight: 500;
+        }
+
+        /* --- 搜索结果展示区 --- */
+        .main-content {
+            padding: 30px 160px;
+            max-width: 850px;
+        }
+        
+        /* 搜索用时提示 */
+        .result-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 单个搜索结果卡片 */
+        .result-item {
+            margin-bottom: 35px;
+        }
+
+        .result-breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #202124;
+            margin-bottom: 5px;
+            gap: 8px;
+        }
+        .result-icon {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #f1f3f4;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 14px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            text-decoration: none;
+            font-weight: 400;
+            line-height: 1.3;
+            cursor: pointer;
+        }
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-desc {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+            margin-top: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .result-date {
+            color: #70757a;
+        }
+        
+        /* 特殊高亮字眼 (模拟浏览器加粗) */
+        .kw {
+            font-weight: bold;
+            color: #202124;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .nav-tabs { margin-left: 10px; }
+            .main-content { padding: 20px 15px; }
+            .logo { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航与搜索区 -->
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">Search</div>
+            <div class="search-box">
+                <!-- 搜索词设定 -->
+                <input type="text" class="search-input" value="浮空之境" id="searchInput" spellcheck="false">
+                <div class="clear-btn" onclick="document.getElementById('searchInput').value=''">×</div>
+                <div class="search-icon-small">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                </div>
+            </div>
+        </div>
+        <div class="nav-tabs">
+            <div class="nav-tab active">全部</div>
+            <div class="nav-tab">图片</div>
+            <div class="nav-tab">视频</div>
+            <div class="nav-tab">资讯</div>
+            <div class="nav-tab">更多</div>
+        </div>
+    </header>
+
+    <!-- 搜索结果区 -->
+    <div class="main-content">
+        <div class="result-stats">找到约 9,250,000 条结果 （用时 0.38 秒）</div>
+
+        <!-- 【目标结果：加密网页跳转】 floating.html -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">🏛️</div>
+                <span>https://www.jc-art.org › exhibitions › 2026</span>
+            </div>
+            <div class="result-title" onclick="executeJump('0x666c6f6174696e672e68746d6c')">
+                2026江城当代新媒体艺术双年展 —— <span class="kw">浮空之境</span>
+            </div>
+            <div class="result-desc">
+                2026江城当代艺术展<span class="kw">浮空之境</span>官方网页。本次展览汇集国内外顶尖数字艺术家，其中包含特邀独立画师 屿秋 的专属空间《落日沉溺》。点击进入沉浸式线上展厅，同步鉴赏全息悬浮画作。
+            </div>
+        </div>
+
+        <!-- 干扰项 1：票务指南 -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">🎫</div>
+                <span>https://www.damai.cn › ticket › jiangcheng</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                购票指南 | 2026<span class="kw">江城“浮空之境”展</span> - 大麦网
+            </div>
+            <div class="result-desc">
+                展览时间：2026年5月20日-8月20日。展览地点：<span class="kw">江城</span>南区国际博览中心。门票分为单人票与双人票，入场需核验数字凭证。请注意，部分全息展厅存在限流措施，请提前预约。
+            </div>
+        </div>
+        
+        <!-- 干扰项 2：艺术评论 -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">📰</div>
+                <span>https://www.art-front.com › reviews › jc-2026</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                深度测评：<span class="kw">江城浮空展</span>，到底值得去吗？ - 艺术前线
+            </div>
+            <div class="result-desc">
+                <span class="result-date">2天前 — </span>整个展览最让人惊艳的莫过于极具张力的光影技术。特别是那个叫《落日沉溺》的独立展厅，据说艺术家在无数次调色中精准还原了晚霞退散前最温柔的一抹温度，现场体验极度震撼。
+            </div>
+        </div>
+
+        <!-- 干扰项 3：知乎问答模拟 -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">知</div>
+                <span>https://www.zhihu.com › question</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                如何评价2026年<span class="kw">江城“浮空之境”</span>新媒体艺术展？ - 知乎
+            </div>
+            <div class="result-desc">
+                抛开主展馆不谈，C区的几个独立画师作品真的封神了。色彩的运用极其克制却又充满爆发力，完全颠覆了以往对平面画作的认知。如果你在<span class="kw">江城</span>，非常推荐去现场感受一下氛围...
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * 加密跳转逻辑
+         * @param {string} token - 目标地址的十六进制代码 (以 0x 开头)
+         * 0x666c6f6174696e672e68746d6c -> floating.html
+         */
+        function executeJump(token) {
+            let destUrl = '';
+            // 去除 0x 前缀
+            let hexSequence = token.substring(2);
+            
+            // 将十六进制转回 ASCII 字符串
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substring(i, i + 2), 16));
+            }
+            
+            // 创建一个隐形的 <a> 标签来模拟点击，绕过本地浏览器的弹窗拦截
+            let link = document.createElement('a');
+            link.href = destUrl;
+            link.target = '_blank'; // 设置在新标签页打开
+            document.body.appendChild(link);
+            link.click(); // 触发点击
+            document.body.removeChild(link); // 用完即焚
+        }
+    </script>
+</body>
+</html>

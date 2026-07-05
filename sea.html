@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>【红牌公示】关于山海寄庐工作室违规用电的通报</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: #e9ecef; /* 手机端论坛常见外圈灰色底色 */
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            display: flex; justify-content: center; height: 100vh; overflow: hidden;
+        }
+
+        /* 隐藏全局滚动条 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; 
+            height: 812px; 
+            background: #f4f5f7; 
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px;
+            border: 8px solid #111;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 移动端顶部导航 ================= */
+        .mobile-header {
+            height: 56px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            background-color: #0056b3;
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn { font-size: 26px; cursor: pointer; line-height: 1; }
+        .header-title { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+        .header-more { font-size: 20px; cursor: pointer; }
+
+        /* ================= 滚动内容区 ================= */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ================= 楼主：主贴区域 ================= */
+        .post-main {
+            background: #fff;
+            padding: 20px 16px;
+            margin-bottom: 10px;
+        }
+
+        /* 帖子标题 */
+        .post-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #212529;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+        .badge-red { 
+            background: #dc3545; color: #fff; font-size: 11px; 
+            padding: 2px 6px; border-radius: 3px; font-weight: normal; 
+            vertical-align: middle; margin-right: 4px; display: inline-block;
+        }
+
+        /* 用户信息行 (移动端改为上下排列) */
+        .user-info-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .avatar { 
+            width: 40px; height: 40px; background: #dc3545; color: #fff; 
+            line-height: 40px; text-align: center; font-size: 16px; 
+            font-weight: bold; border-radius: 5px; margin-right: 12px; 
+            flex-shrink: 0;
+        }
+        .user-detail { flex: 1; }
+        .username-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px;}
+        .username { font-weight: bold; color: #dc3545; font-size: 14px; }
+        .user-title { font-size: 10px; color: #fff; background: #dc3545; padding: 1px 4px; border-radius: 2px; }
+        .post-meta { font-size: 11px; color: #999; }
+
+        /* 正文排版 */
+        .post-body { font-size: 15px; color: #333; line-height: 1.6; text-align: justify; }
+        .post-body p { margin-bottom: 12px; }
+
+        /* ================= 官方红头文件式高亮框 (移动端适配) ================= */
+        .official-notice {
+            border: 1.5px solid #dc3545;
+            background-color: #fff8f8;
+            padding: 16px 12px;
+            margin: 16px 0;
+            position: relative;
+            border-radius: 4px;
+        }
+        .official-notice h3 { 
+            color: #dc3545; margin-bottom: 12px; font-size: 15px; 
+            border-bottom: 1px solid #f5c6cb; padding-bottom: 6px; 
+        }
+        .official-notice ul { margin-left: 20px; font-size: 14px;}
+        .official-notice li { margin-bottom: 8px; }
+
+        /* CSS绘制的虚拟印章 (移动端缩小并调整透明度) */
+        .stamp {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(220, 53, 69, 0.3);
+            border-radius: 50%;
+            color: rgba(220, 53, 69, 0.3);
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 74px;
+            transform: rotate(-20deg);
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: 1px;
+        }
+        .stamp::after {
+            content: '★';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            width: 100%;
+            font-size: 20px;
+        }
+
+        /* ================= 评论回复区 ================= */
+        .reply-header {
+            font-size: 14px;
+            font-weight: bold;
+            padding: 12px 16px;
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0;
+            color: #444;
+        }
+
+        .reply-item {
+            background: #fff;
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .reply-avatar { 
+            width: 36px; height: 36px; background: #6c757d; color: #fff; 
+            line-height: 36px; text-align: center; font-size: 14px; 
+            border-radius: 50%; flex-shrink: 0; 
+        }
+        
+        .reply-content-wrap { flex: 1; }
+        
+        .reply-name-row {
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: 6px;
+        }
+        .reply-name { font-size: 13px; font-weight: bold; color: #495057; }
+        .reply-floor { font-size: 11px; color: #999; }
+        
+        .reply-content { font-size: 14px; color: #444; line-height: 1.5; text-align: justify; margin-bottom: 8px;}
+        .reply-time { font-size: 11px; color: #aaa; }
+
+        .end-mark { text-align: center; font-size: 12px; color: #aaa; padding: 20px 0 30px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        
+        <!-- 移动端顶部导航 -->
+        <div class="mobile-header">
+            <div class="back-btn" onclick="history.back()">‹</div>
+            <div class="header-title">物业论坛曝光台</div>
+            <div class="header-more">⋮</div>
+        </div>
+
+        <div class="scroll-content">
+            
+            <!-- 楼主：主贴区域 -->
+            <div class="post-main">
+                <div class="post-title">
+                    <span class="badge-red">置顶公示</span>
+                    【红牌通报】关于B区4栋地下04号单元（山海寄庐工作室）违规高危用电的查处结果
+                </div>
+
+                <div class="user-info-row">
+                    <div class="avatar">安</div>
+                    <div class="user-detail">
+                        <div class="username-wrap">
+                            <div class="username">园区安全办</div>
+                            <div class="user-title">管理员</div>
+                        </div>
+                        <div class="post-meta">发表于 2026-07-01 09:30 | 1.4w 阅读</div>
+                    </div>
+                </div>
+
+                <div class="post-body">
+                    <p>各位园区租户、企业负责人：</p>
+                    <p>近期，园区智能电网主控系统连续多日发出高压负载警报。经后勤工程部排查，警报源头锁定为 <strong>B区4栋地下04号仓库</strong>。现将相关查处情况通报如下：</p>
+
+                    <div class="official-notice">
+                        <div class="stamp">违规断电</div>
+                        <h3>查处详情简报</h3>
+                        <ul>
+                            <li><strong>登记承租方：</strong>山海寄庐艺术工作室（法人/紧急联系人：陈*秋）</li>
+                            <li><strong>违规事由：</strong>该单元出现极度异常的工业级用电过载。其日均耗电量高达 400 度，严重超出地下室物理极值，极易引发大面积停电及火灾。</li>
+                            <li><strong>现场勘验报告：</strong>6月30日晚，物业联合消防强制破门。该门店内并无任何艺术创作工具。内部已被私自改造为由 24 组级联排风扇组成的散热矩阵，及一台永不关机的高算力定制服务器机柜。</li>
+                            <li><strong>处置结果：</strong>因多次联系承租人未果，该物理节点的电源总控与外网路由，已由底层网络提供商强行接管并监控。</li>
+                        </ul>
+                    </div>
+
+                    <p>安全无小事！严禁任何企业私搭“矿场”或私接工业电网。一经发现，物业将直接拉闸并上报。</p>
+                    <p style="text-align: right; color: #666; font-size: 13px; margin-top: 20px;">江城创意科技园 后勤安全处<br>2026年7月1日</p>
+                </div>
+            </div>
+
+            <!-- 评论回复区 -->
+            <div class="reply-header">全部回复 (12)</div>
+
+            <!-- 1楼回复 -->
+            <div class="reply-item">
+                <div class="reply-avatar">邻</div>
+                <div class="reply-content-wrap">
+                    <div class="reply-name-row">
+                        <div class="reply-name">隔壁老王包装厂</div>
+                        <div class="reply-floor">1楼</div>
+                    </div>
+                    <div class="reply-content">
+                        大快人心！早就该查了！我租在地下03号，隔壁那个所谓的“画室”平时根本不见有人进出。最恐怖的是，一到下半夜，那个房间里就传出巨大的“嗡嗡嗡”的风扇轰鸣声，吵得人根本没法睡觉。我还以为他们在里面造飞机呢！
+                    </div>
+                    <div class="reply-time">07-01 10:15</div>
+                </div>
+            </div>
+
+            <!-- 2楼回复 -->
+            <div class="reply-item">
+                <div class="reply-avatar">电</div>
+                <div class="reply-content-wrap">
+                    <div class="reply-name-row">
+                        <div class="reply-name">园区电工老李</div>
+                        <div class="reply-floor">2楼</div>
+                    </div>
+                    <div class="reply-content">
+                        昨晚破门我也在场。里面简直是个大冰窖，为了给那台机器散热，空调开到了最低，墙上全贴满了录音棚级别的高密度隔音海绵。我就纳闷了，服务器噪音再大，至于搞得像个完全真空的静音室一样吗？这人是不是有什么精神强迫症，或者是在里面录什么不能让人听见杂音的东西？
+                    </div>
+                    <div class="reply-time">07-01 11:05</div>
+                </div>
+            </div>
+
+            <div class="end-mark">- 没有更多回复了 -</div>
+
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search</title>
+    <style>
+        /* 基础重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            height: 100vh; 
+            /* 采用带有高级质感的极浅暖灰白，而非刺眼的纯白 */
+            background-color: #Fdfcfb; 
+            color: #3c4043; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            position: relative;
+        }
+
+        /* 极微弱的底端暖光（呼应晚霞与落日） */
+        .warm-glow { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 35vh; 
+            background: linear-gradient(to top, rgba(255, 153, 51, 0.03) 0%, transparent 100%); 
+            pointer-events: none; 
+            z-index: 0; 
+        }
+
+        /* 中心容器 */
+        .container { 
+            z-index: 1; 
+            width: 100%; 
+            max-width: 680px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px;
+            margin-top: -12vh; /* 视觉重心稍微偏上，更显高级 */
+        }
+
+        /* 顶部文学感 Logo / 问候语 */
+        .greeting { 
+            font-size: 2.2rem; 
+            color: #202124; 
+            margin-bottom: 40px; 
+            letter-spacing: 4px; 
+            font-family: "Noto Serif SC", "Songti SC", serif; /* 衬线体赋予文学质感 */
+            font-weight: 400;
+            text-align: center;
+        }
+
+        /* 搜索框外部容器 */
+        .search-wrapper { 
+            position: relative; 
+            width: 100%; 
+            display: flex;
+            align-items: center;
+        }
+
+        /* 搜索图标 (SVG) */
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            width: 20px;
+            height: 20px;
+            fill: #9aa0a6;
+            pointer-events: none;
+            transition: fill 0.3s;
+        }
+
+        /* 纯净质感搜索框 */
+        .search-box { 
+            width: 100%; 
+            height: 52px;
+            padding: 0 24px 0 48px; 
+            font-size: 1.05rem; 
+            color: #202124; 
+            background: #ffffff; 
+            border: 1px solid #dfe1e5; 
+            border-radius: 26px; /* 经典的胶囊形状 */
+            outline: none; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+
+        /* 悬停与聚焦时的质感变化 */
+        .search-box:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-box:focus { 
+            border-color: rgba(255, 153, 51, 0.3); /* 聚焦时边框微泛暖橘色 */
+            box-shadow: 0 4px 15px rgba(255, 153, 51, 0.08); 
+        }
+        
+        .search-box:focus + .search-icon {
+            fill: #ff9933; /* 图标同步点亮 */
+        }
+
+        .search-box::placeholder { 
+            color: #9aa0a6; 
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* 底部操作按钮 */
+        .actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #f8f9fa;
+            color: #5f6368;
+            font-size: 14px;
+            padding: 10px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .action-btn:hover {
+            background-color: #f8f9fa;
+            border-color: #dadce0;
+            color: #202124;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        /* 按钮按下时的细微反馈 */
+        .action-btn:active {
+            background-color: #e8eaed;
+        }
+
+        /* 无搜索结果提示框 */
+        .no-result-msg {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #70757a;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: all 0.4s ease;
+            height: 20px; /* 占位防止页面抖动 */
+            pointer-events: none;
+        }
+
+        .no-result-msg.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .no-result-msg span {
+            color: #202124;
+            font-weight: 500;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 极微弱的底端暖光 -->
+    <div class="warm-glow"></div>
+
+    <div class="container">
+        <!-- 撰稿人的问候 (替代Google Logo) -->
+        <div class="greeting" id="greeting">Search</div>
+
+        <!-- 中心搜索区域 -->
+        <div class="search-wrapper">
+            <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="search-icon"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+            <input type="text" class="search-box" placeholder="检索世界，或是记录灵感..." id="searchInput" autocomplete="off" spellcheck="false">
+        </div>
+
+        <!-- 仿谷歌的双按钮设计，文本替换为更具文学感的词汇 -->
+        <div class="actions">
+            <button class="action-btn" id="searchBtn">检索网络</button>
+            <button class="action-btn" id="luckyBtn">留存字句</button>
+        </div>
+
+        <!-- 搜索无结果时的温和提示 -->
+        <div class="no-result-msg" id="noResultMsg"></div>
+    </div>
+
+    <script>
+        // 根据时间动态改变问候语
+        function updateGreeting() {
+            const greetingEl = document.getElementById('greeting');
+            const currentHour = new Date().getHours();
+            
+            if (currentHour >= 0 && currentHour < 5) {
+                greetingEl.innerText = '注意休息哦冬冬';
+            } else if (currentHour >= 5 && currentHour < 10) {
+                greetingEl.innerText = '早上好冬冬~';
+            } else if (currentHour >= 17 && currentHour < 20) {
+                greetingEl.innerText = '记得吃晚饭哦冬冬 :）';
+            } else {
+                greetingEl.innerText = 'Search'; // 白天的默认状态
+            }
+        }
+        
+        updateGreeting();
+        
+        // 
+        function doSearch() {
+            const inputEl = document.getElementById('searchInput');
+            const noResultEl = document.getElementById('noResultMsg');
+            const query = inputEl.value.trim();
+            
+            if (!query) return;
+
+            // 
+            const encryptedQuery = encodeURIComponent(query.toLowerCase()).replace(/%/g, '').toLowerCase();
+
+            // 
+            const secretMap = {
+                //
+                'e69e81e5a49ce59b9ee5a3b0': '736561726368312e68746d6c',
+                '23e69e81e5a49ce59b9ee5a3b0': '736561726368312e68746d6c',
+                
+                //
+                'e6b19fe59f8ee6b5aee7a9bae5b195': '736561726368322e68746d6c',
+                'e6b5aee7a9bae4b98be5a283': '736561726368322e68746d6c',
+                
+                //
+                'vapor': '736561726368332e68746d6c',
+                'vapore6b8b8e6888fe5b9b3e58fb0': '736561726368332e68746d6c',
+                
+                //
+                'e6b19fe59f8ee5889be6848fe7a791e68a80e59bad': '736561726368342e68746d6c',
+                
+                //
+                'e5b1b1e6b5b7e5af84e5ba90': '736561726368352e68746d6c',
+                'e5b1b1e6b5b7e5af84e5ba90e5b7a5e4bd9ce5aea4': '736561726368352e68746d6c',
+                'e5b1b1e6b5b7e5af84e5ba90e889bae69cafe5b7a5e4bd9ce5aea4': '736561726368352e68746d6c',
+                
+                // 
+                'e6b19fe59f8ee5889be5aea2e4ba91e4b8ade5bf83': '736561726368362e68746d6c'
+            };
+
+            const targetHex = secretMap[encryptedQuery];
+
+            if (targetHex) {
+                // 如果命中彩蛋词：清空报错提示，解密打开新网页
+                noResultEl.classList.remove('show');
+                
+                let destUrl = '';
+                for (let i = 0; i < targetHex.length; i += 2) {
+                    destUrl += String.fromCharCode(parseInt(targetHex.substring(i, i + 2), 16));
+                }
+                
+                let link = document.createElement('a');
+                link.href = destUrl;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // 没搜到词：本页下方显示提示信息
+                noResultEl.innerHTML = `找不到与 "<span>${query}</span>" 相关的网页或灵感。`;
+                noResultEl.classList.add('show');
+            }
+        }
+
+        // 当用户重新修改搜索词时，提示文字优雅淡出
+        document.getElementById('searchInput').addEventListener('input', function() {
+            document.getElementById('noResultMsg').classList.remove('show');
+        });
+
+        // 监听回车键
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                doSearch();
+            }
+        });
+
+        // 监听按钮点击
+        document.getElementById('searchBtn').addEventListener('click', doSearch);
+        
+        // 留存字句按钮
+        document.getElementById('luckyBtn').addEventListener('click', function() {
+            const input = document.getElementById('searchInput');
+            if(input.value) {
+                input.value = '';
+                document.getElementById('noResultMsg').classList.remove('show');
+                input.placeholder = "字句已封存...";
+                setTimeout(() => {
+                    input.placeholder = "检索世界，或是记录灵感...";
+                }, 2000);
+            }
+        });
+
+        // 页面加载完毕后，输入框自动获取焦点
+        window.onload = function() {
+            document.getElementById('searchInput').focus();
+        };
+    </script>
+</body>
+</html>

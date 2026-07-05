@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vapor游戏平台 - Search</title>
+    <style>
+        /* 基础重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #ffffff; 
+            color: #202124; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
+            overflow-x: hidden;
+        }
+
+        /* --- 顶部固定导航栏 --- */
+        .header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 20px 30px 0 30px;
+            border-bottom: 1px solid #ebebeb;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* 纯净版 Search Logo */
+        .logo {
+            font-size: 24px;
+            font-weight: 500;
+            color: #5f6368;
+            letter-spacing: 1px;
+            margin-right: 40px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        /* 顶部的胶囊搜索框 */
+        .search-box {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 690px;
+            height: 44px;
+            background: #fff;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 0 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s;
+        }
+        .search-box:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #202124;
+            padding-left: 10px;
+        }
+
+        /* 搜索框内的清理图标 */
+        .clear-btn {
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 10px;
+            border-right: 1px solid #dfe1e5;
+        }
+        .search-icon-small {
+            padding-left: 15px;
+            color: #4285f4;
+            cursor: pointer;
+        }
+
+        /* 分类导航 */
+        .nav-tabs {
+            display: flex;
+            gap: 25px;
+            margin-left: 130px; /* 对齐搜索框 */
+            font-size: 14px;
+            color: #5f6368;
+        }
+        .nav-tab {
+            padding-bottom: 12px;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            font-weight: 500;
+        }
+
+        /* --- 搜索结果展示区 --- */
+        .main-content {
+            padding: 30px 160px;
+            max-width: 850px;
+        }
+        
+        /* 搜索用时提示 */
+        .result-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 单个搜索结果卡片 */
+        .result-item {
+            margin-bottom: 35px;
+        }
+
+        .result-breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #202124;
+            margin-bottom: 5px;
+            gap: 8px;
+        }
+        .result-icon {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #f1f3f4;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 14px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            text-decoration: none;
+            font-weight: 400;
+            line-height: 1.3;
+            cursor: pointer;
+        }
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-desc {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+            margin-top: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .result-date {
+            color: #70757a;
+        }
+        
+        /* 特殊高亮字眼 (模拟浏览器加粗) */
+        .kw {
+            font-weight: bold;
+            color: #202124;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .nav-tabs { margin-left: 10px; }
+            .main-content { padding: 20px 15px; }
+            .logo { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航与搜索区 -->
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">Search</div>
+            <div class="search-box">
+                <!-- 搜索词设定 -->
+                <input type="text" class="search-input" value="Vapor游戏平台" id="searchInput" spellcheck="false">
+                <div class="clear-btn" onclick="document.getElementById('searchInput').value=''">×</div>
+                <div class="search-icon-small">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                </div>
+            </div>
+        </div>
+        <div class="nav-tabs">
+            <div class="nav-tab active">全部</div>
+            <div class="nav-tab">图片</div>
+            <div class="nav-tab">视频</div>
+            <div class="nav-tab">资讯</div>
+            <div class="nav-tab">更多</div>
+        </div>
+    </header>
+
+    <!-- 搜索结果区 -->
+    <div class="main-content">
+        <div class="result-stats">找到约 35,600,000 条结果 （用时 0.24 秒）</div>
+
+        <!-- 【目标结果：加密网页跳转】 vapor.html -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">🎮</div>
+                <span>https://store.vapor-platform.com › zh-cn</span>
+            </div>
+            <div class="result-title" onclick="executeJump('0x7661706f722e68746d6c')">
+                <span class="kw">Vapor</span> - 终极数字游戏平台 | 欢迎来到你的云端世界
+            </div>
+            <div class="result-desc">
+                <span class="kw">Vapor</span>是全球领先的数字游戏发行与游玩平台。在这里，你可以购买、下载并畅玩数以万计的游戏大作与独立精品。通过云端联机服务，随时随地与你的好友在虚拟世界中重逢。
+            </div>
+        </div>
+
+        <!-- 干扰项 1：百科科普 -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">W</div>
+                <span>https://zh.wikipedia.org › wiki › Vapor</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                <span class="kw">Vapor (游戏平台)</span> - 维基百科，自由的百科全书
+            </div>
+            <div class="result-desc">
+                <span class="kw">Vapor</span> 是一个广受欢迎的综合性数字游戏发行平台，提供数字版权管理、多人游戏、流媒体和社交网络服务。它支持创意工坊，允许玩家自由上传和分享游戏的自定义Mod与地图资产...
+            </div>
+        </div>
+        
+        <!-- 干扰项 2：论坛求助 (埋伏笔：呼应剧情里的断网) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">贴</div>
+                <span>https://tieba.baidu.com › p</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                【求助】<span class="kw">Vapor平台</span>最近是不是抽风了？怎么一直连不上服务器？
+            </div>
+            <div class="result-desc">
+                <span class="result-date">2026年6月25日 — </span>如题。今天晚上想和女朋友联机打一会儿，结果<span class="kw">Vapor平台</span>一直显示“无法连接至网络”。有没有老哥知道是怎么回事...
+            </div>
+        </div>
+
+        <!-- 干扰项 3：游戏资讯推荐 (埋彩蛋：北极星物语) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">📰</div>
+                <span>https://www.gamer-core.cn › news › 2026</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                <span class="kw">Vapor平台</span>年度最佳双人联机游戏盘点 - 游戏核心
+            </div>
+            <div class="result-desc">
+                异地恋必备！除了经典的合作大作，今年在<span class="kw">Vapor</span>上还有哪些值得入手的双人联机独立游戏？
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * 加密跳转逻辑
+         * @param {string} token - 目标地址的十六进制代码 (以 0x 开头)
+         * 0x7661706f722e68746d6c -> vapor.html
+         */
+        function executeJump(token) {
+            let destUrl = '';
+            // 去除 0x 前缀
+            let hexSequence = token.substring(2);
+            
+            // 将十六进制转回 ASCII 字符串
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substring(i, i + 2), 16));
+            }
+            
+            // 创建一个隐形的 <a> 标签来模拟点击，绕过本地浏览器的弹窗拦截
+            let link = document.createElement('a');
+            link.href = destUrl;
+            link.target = '_blank'; // 设置在新标签页打开
+            document.body.appendChild(link);
+            link.click(); // 触发点击
+            document.body.removeChild(link); // 用完即焚
+        }
+    </script>
+</body>
+</html>

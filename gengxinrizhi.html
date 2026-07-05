@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Release Notes - 态势感知引擎 v4.0</title>
+    <style>
+        /* ================= 基础极客风格重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, 'PingFang SC', monospace; }
+        
+        body { 
+            background-color: #050508; 
+            color: #8be9fd; 
+            display: flex;
+            justify-content: center;
+            /* 手机端上下减少边距，左右贴边 */
+            padding: 20px 10px;
+            min-height: 100vh;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden; /* 防止横向滚动 */
+        }
+
+        /* ================= 终端窗口 ================= */
+        .terminal-window {
+            width: 100%;
+            max-width: 850px;
+            background: rgba(10, 10, 15, 0.85);
+            border: 1px solid #6272a4;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 10px rgba(0,240,255,0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ================= 终端头部 ================= */
+        .terminal-header {
+            background: #1e1e2e;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #6272a4;
+        }
+        .window-controls { display: flex; gap: 8px; margin-right: 15px; flex-shrink: 0;}
+        .control-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5555; }
+        .dot-yellow { background-color: #f1fa8c; }
+        .dot-green { background-color: #50fa7b; }
+        
+        /* 文件名标题：超出省略 */
+        .window-title { 
+            color: #6272a4; font-size: 13px; font-weight: bold; letter-spacing: 1px; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ================= 正文内容区 ================= */
+        .content {
+            padding: 20px 15px; /* 移动端减小内边距 */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            color: #f8f8f2;
+            font-size: 13px; /* 移动端调小字号 */
+            line-height: 1.6;
+        }
+
+        h1 { 
+            color: #50fa7b; font-size: 18px; margin-bottom: 5px; 
+            border-bottom: 1px dashed #6272a4; padding-bottom: 10px; line-height: 1.4;
+        }
+        .release-date { color: #6272a4; font-size: 11px; margin-bottom: 25px; word-break: break-all;}
+
+        h2 { color: #bd93f9; font-size: 15px; margin-top: 25px; margin-bottom: 15px; }
+
+        ul { list-style-type: none; margin-bottom: 20px; }
+        li { margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px; text-align: justify; word-break: break-all;}
+        li::before { content: "►"; color: #00f0ff; font-weight: bold; margin-top: 2px;}
+
+        .tag-add { color: #50fa7b; font-weight: bold; flex-shrink: 0;}
+        .tag-fix { color: #ffb86c; font-weight: bold; flex-shrink: 0;}
+        .tag-opt { color: #8be9fd; font-weight: bold; flex-shrink: 0;}
+
+        code { background: rgba(255,255,255,0.1); padding: 2px 4px; border-radius: 3px; color: #ff79c6; word-break: break-all;}
+        .highlight { color: #ff5555; font-weight: bold; }
+
+        /* ================= 开发者备忘区 ================= */
+        .dev-notes {
+            margin-top: 30px;
+            background: rgba(98, 114, 164, 0.1);
+            border-left: 4px solid #f1fa8c;
+            padding: 15px;
+            color: #f1fa8c;
+        }
+        .dev-notes-title { font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; color: #f1fa8c; font-size: 14px;}
+        .dev-notes-title::before { content: '⚠️'; font-size: 16px; }
+        .comment-text { color: #6272a4; font-style: italic; margin-bottom: 8px; text-align: justify;}
+
+        /* ================= 极致隐蔽的秘密数据层 (重点移动端适配) ================= */
+        .secret-data {
+            margin-top: 15px;
+            font-family: monospace;
+            padding: 10px; /* 增加移动端触控面积 */
+            
+            /* 核心：文字颜色设置透明，但在手机上必须允许用户长按选中 */
+            color: transparent; 
+            user-select: text;
+            -webkit-user-select: text; /* Safari/iOS 允许选中文本 */
+            
+            /* 在手机上，如果完全没有内容提示，用户不知道长按哪里，
+               所以我们给一个极浅极浅的底色框作为“擦除条”的暗示 */
+            background: rgba(255,255,255,0.02);
+            border-radius: 4px;
+        }
+
+        /* 选中状态：暗文显现 (兼容移动端长按选中) */
+        .secret-data::selection, .secret-data *::selection {
+            background: #ff5555;
+            color: #000;
+            text-shadow: none;
+        }
+        .secret-data::-moz-selection, .secret-data *::-moz-selection {
+            background: #ff5555;
+            color: #000;
+            text-shadow: none;
+        }
+
+        /* ================= 底部操作 ================= */
+        .actions {
+            margin-top: 40px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .btn-close {
+            background: transparent; border: 1px solid #00f0ff; color: #00f0ff; 
+            padding: 10px 20px; cursor: pointer; transition: all 0.3s; font-size: 14px;
+            border-radius: 4px; width: 100%; max-width: 250px;
+        }
+        .btn-close:active { background: #00f0ff; color: #000; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="terminal-window">
+        <!-- 窗口栏 -->
+        <div class="terminal-header">
+            <div class="window-controls">
+                <div class="control-dot dot-red"></div>
+                <div class="control-dot dot-yellow"></div>
+                <div class="control-dot dot-green"></div>
+            </div>
+            <div class="window-title">jc_cloud_release_notes.md</div>
+        </div>
+
+        <!-- 正文内容 -->
+        <div class="content">
+            <h1>态势感知引擎 v4.0 更新日志 (Release Notes)</h1>
+            <div class="release-date">发布时间: 2026-06-01 10:00:00 | 节点: 全网同步推送</div>
+
+            <h2># 新增特性 (New Features)</h2>
+            <ul>
+                <li><span class="tag-add">[新增]</span> 深度资产扫描：新增对“超大参数情感计算模型”运行状态的监控支持，可实时追踪沙盒内的数据溢出。</li>
+                <li><span class="tag-add">[新增]</span> 物理机房映射：将 B区4栋、C区等地下机房的物理耗电量接入仪表盘。</li>
+                <li><span class="tag-add">[新增]</span> 紧急熔断协议：当检测到虚拟容器逃逸风险时，允许管理员远程拉闸断电。</li>
+            </ul>
+
+            <h2># 修复与优化 (Bug Fixes & Optimizations)</h2>
+            <ul>
+                <li><span class="tag-fix">[修复]</span> 修复了 <code>Grid_Power_Failure</code> 报错时，备份节点无法自动上线的问题。</li>
+                <li><span class="tag-fix">[修复]</span> 修复了检索结果偶发性 502 Bad Gateway 的网络波动。</li>
+                <li><span class="tag-opt">[优化]</span> 移除了普通游客的检索权限。自 v4.0 起，全网扫描必须依赖管理员 Token 进行鉴权。</li>
+            </ul>
+
+            <!-- 核心剧透区域：防源码审查的密码区 -->
+            <div class="dev-notes">
+                <div class="dev-notes-title">内部开发者备忘 (Internal Dev Notes) - 阅后即焚</div>
+                <p class="comment-text">// @张工：因为刚加了权限校验，外包运维团队那边抱怨说新版本的鉴权 API 老是调不通，没法测试机房的网段扫描。</p>
+                <p class="comment-text">// 没办法，为了不卡周五的进度，我先在前端验证逻辑里写死了一套硬编码的后门，给他们临时提权用。下周一发 v4.0.1 补丁的时候我再删掉！！！</p>
+                <p class="comment-text" style="font-size: 11px; opacity: 0.6; margin-top: 15px;"></p>
+                
+                <!-- 空白占位符，由 JS 注入解密后的数据 -->
+                <div class="secret-data" id="classifiedVault"></div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-close" id="closeWinBtn">[ 关闭窗口 / 返回主域 ]</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 加密的后门账号密码
+        const _0xData = "VXNlcm5hbWUgOiBhZG1pbjxicj5QYXNzd29yZCA6IGpjX2Nsb3VkXzIwMjY=";
+        
+        // 页面加载完成后静默解密并渲染到透明区块中
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('classifiedVault').innerHTML = atob(_0xData);
+        });
+
+        // 移动端返回逻辑
+        const closeBtn = document.getElementById('closeWinBtn');
+        closeBtn.addEventListener('click', () => {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.close();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026江城当代艺术双年展 —— 浮空之境</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: #07070a; 
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+            color: #e0e0e0;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; 
+            height: 812px; 
+            background: #07070a;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px;
+            border: 8px solid #111;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 艺术流线渐变背景 ================= */
+        .abstract-bg {
+            position: absolute;
+            top: -20%; left: -20%; width: 140%; height: 140%;
+            background: 
+                radial-gradient(circle at 20% 40%, rgba(45, 25, 60, 0.6) 0%, transparent 50%),
+                radial-gradient(circle at 80% 60%, rgba(20, 45, 65, 0.6) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(65, 30, 30, 0.5) 0%, transparent 60%);
+            z-index: 0;
+            filter: blur(30px);
+            animation: flow 15s ease-in-out infinite alternate;
+        }
+        @keyframes flow {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(3deg) scale(1.1) translate(2%, 2%); }
+            100% { transform: rotate(-3deg) scale(1) translate(-2%, -2%); }
+        }
+
+        /* ================= 移动端顶部导航 ================= */
+        .header {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            padding: 20px 20px 10px;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: linear-gradient(to bottom, rgba(7,7,10,0.9) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        .header h1 { font-size: 14px; font-weight: 300; color: #fff; letter-spacing: 2px; }
+        .live-badge { color: #ff4757; font-size: 11px; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;}
+        .live-badge::before { content: ''; display: block; width: 6px; height: 6px; background: #ff4757; border-radius: 50%; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* ================= 垂直滚动画廊区 ================= */
+        .gallery-area {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            padding: 100px 20px 60px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            perspective: 800px; /* 增加 3D 纵深感 */
+        }
+
+        /* 移动端投影画作 */
+        .artwork-item {
+            position: relative;
+            width: 85%;
+            opacity: 0.8;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6), 0 0 15px rgba(255,255,255,0.05);
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: floating 4s ease-in-out infinite;
+        }
+        
+        /* 左右交错排布，模拟展厅的随意感 */
+        .artwork-item:nth-child(odd) { align-self: flex-start; margin-left: 5%; animation-delay: 0s; }
+        .artwork-item:nth-child(even) { align-self: flex-end; margin-right: 5%; animation-delay: -2s; }
+
+        @keyframes floating { 
+            0% { transform: translateY(0px) translateZ(0); } 
+            50% { transform: translateY(-10px) translateZ(10px); } 
+            100% { transform: translateY(0px) translateZ(0); } 
+        }
+
+        /* 画布纹理滤镜 */
+        .artwork-item::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px);
+            pointer-events: none;
+        }
+
+        .artwork-item img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.15);
+            mix-blend-mode: screen; 
+            transition: mix-blend-mode 0.3s;
+        }
+
+        .artwork-item.active {
+            opacity: 1;
+            transform: scale(1.05) translateZ(20px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9), 0 0 25px rgba(255, 180, 100, 0.3);
+            z-index: 20;
+            animation: none; /* 点击后停止浮动，稳定展示 */
+        }
+        .artwork-item.active img { mix-blend-mode: normal; border-color: rgba(255, 160, 50, 0.6); }
+
+        /* ================= 底部弹出的半屏控制台 (Bottom Sheet) ================= */
+        .bottom-panel {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(15, 15, 20, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px 24px 0 0;
+            padding: 24px 24px 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+            z-index: 100;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .bottom-panel.show { transform: translateY(0); }
+
+        /* 顶部关闭滑块条 */
+        .panel-drag-bar {
+            width: 40px; height: 4px; background: rgba(255,255,255,0.2);
+            border-radius: 2px; margin: 0 auto 20px;
+        }
+
+        .art-title { font-size: 20px; font-weight: 400; margin-bottom: 6px; color: #fff; letter-spacing: 1px; }
+        .art-artist { font-size: 11px; color: #888; margin-bottom: 16px; letter-spacing: 1px; font-family: monospace; }
+        .art-desc { font-size: 13px; line-height: 1.6; color: #bbb; text-align: justify; margin-bottom: 20px;}
+
+        /* 取色交互区 */
+        .interaction-area { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; }
+        
+        .tool-btn {
+            width: 100%; padding: 12px; border-radius: 8px;
+            background: transparent; border: 1px solid #ff9e00; color: #ff9e00;
+            cursor: pointer; font-size: 13px; letter-spacing: 1px; transition: all 0.3s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .tool-btn.picking { background: #ff9e00; color: #000; box-shadow: 0 0 15px rgba(255, 158, 0, 0.3); border-color: transparent;}
+
+        /* 显示的结果 */
+        .result-box {
+            display: none;
+            margin-top: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            padding: 16px;
+            border-radius: 8px;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .result-box .label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 8px; }
+        .result-box .hex-value { font-size: 24px; font-weight: bold; color: #fff; letter-spacing: 2px; font-family: monospace; display: flex; align-items: center; gap: 12px; }
+        .color-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #fff; box-shadow: 0 0 10px currentColor; }
+        .result-box .sys-note { margin-top: 10px; font-size: 11px; color: #ff9e00; line-height: 1.5; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 全局取色准星 */
+        .phone-frame.picker-mode .artwork-item { cursor: crosshair !important; }
+
+        /* 隐秘的作者引导 (仅框选/长按可见) */
+        .secret-clue {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.05); /* 极其暗淡，需要仔细看或全选 */
+            z-index: 0;
+            user-select: text;
+        }
+        .secret-clue::selection { background: rgba(255, 255, 255, 0.2); color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame" id="phoneFrame">
+        
+        <!-- 抽象背景 -->
+        <div class="abstract-bg"></div>
+
+        <!-- 顶部标签 -->
+        <div class="header">
+            <h1>2026 浮空之境 // 沉浸式艺术特展</h1>
+            <div class="live-badge">画廊状态在线</div>
+        </div>
+
+        <!-- 画廊滚动区 -->
+        <div class="gallery-area" id="galleryArea">
+            <!-- 动态生成画作 -->
+        </div>
+
+        <!-- 隐秘彩蛋 -->
+        <div class="secret-clue">寻找色彩的源头：小红书 秋屿冬</div>
+
+        <!-- 底部弹出控制台 -->
+        <div class="bottom-panel" id="bottomPanel">
+            <div class="panel-drag-bar" id="closePanelBtn"></div>
+            
+            <div class="art-title" id="pTitle">《画作名称》</div>
+            <div class="art-artist" id="pArtist">Artist: 屿秋</div>
+            <div class="art-desc" id="pDesc">描述文本...</div>
+
+            <div class="interaction-area">
+                <button class="tool-btn" id="eyedropperBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path><path d="M15 5l4 4"></path></svg>
+                    激活色彩提取笔
+                </button>
+
+                <div class="result-box" id="resultBox">
+                    <div class="label">提取色彩代码 // Hex Code</div>
+                    <div class="hex-value">
+                        <div class="color-swatch" id="colorSwatch"></div>
+                        <span id="hexText">#000000</span>
+                    </div>
+                    <div class="sys-note" id="sysNote"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 纯艺术向的画作数据描述
+        const artworksData = [
+            { id: 'art1', src: '落日.jpg', title: '《落日沉溺》', artist: '屿秋 (Yuqiu)', desc: '暖橘色的余晖洒满天际，画笔捕捉了黄昏退散前最温柔的一抹余温，让人沉醉于这片刻的宁静。', hex: '#ff9933', isKey: false },
+            { id: 'art2', src: '极夜回声.png', title: '《流星轨迹》', artist: '屿秋 (Yuqiu)', desc: '寂静的夜空深邃如镜，星辰的光芒在黑暗中交织出微弱而恒久的旋律。', hex: '#E1D5E7', isKey: false },
+            { id: 'art3', src: '8230F43ED1ADB6C65298830E2E76D4D1.jpg', title: '《黄金水域》', artist: '屿秋 (Yuqiu)', desc: '阳光肆意倾泻在波光粼粼的水面上，刺眼而温暖。创作者用层层叠叠的金色调，勾勒出生命深处对光芒本能的追寻与渴望。', hex: '#FFC125', isKey: false },
+            { id: 'art4', src: 'B9911CEBB5D9EFBC252F0579EDE4BC47.jpg', title: '《无界之蓝》', artist: '屿秋 (Yuqiu)', desc: '幽深而克制的情感宣泄。每一道翻涌海浪的高光、每一抹深邃的蔚蓝，都经过了无数次的重构与覆盖，在静谧中蕴藏着无尽的力量。', hex: '#4682B4', isKey: false },
+            { id: 'art5', src: '25906BE2F1E2B88FCC1724B55E6F5F14.jpg', title: '《星月呢喃》', artist: '屿秋 (Yuqiu)', desc: '少女端坐于新月之上，指尖轻拂过洒落的星尘，仿佛在聆听夜幕深处的童话。', hex: '#2B1B54', isKey: false },
+            { id: 'art6', src: '81D901F295707625D26A44949B1D7CE8.jpg', title: '《深海沉眠》', artist: '屿秋 (Yuqiu)', desc: '执剑的少女向着深渊坠落，幽蓝的海水包裹着无声的挣扎，光影在水波中破碎又重组。', hex: '#112233', isKey: false }
+        ];
+
+        const galleryArea = document.getElementById('galleryArea');
+        const bottomPanel = document.getElementById('bottomPanel');
+        const phoneFrame = document.getElementById('phoneFrame');
+        
+        // 面板元素
+        const pTitle = document.getElementById('pTitle');
+        const pArtist = document.getElementById('pArtist');
+        const pDesc = document.getElementById('pDesc');
+        const eyedropperBtn = document.getElementById('eyedropperBtn');
+        const resultBox = document.getElementById('resultBox');
+        const hexText = document.getElementById('hexText');
+        const colorSwatch = document.getElementById('colorSwatch');
+        const sysNote = document.getElementById('sysNote');
+        const closePanelBtn = document.getElementById('closePanelBtn');
+
+        let currentActiveArt = null;
+        let isPickerMode = false;
+
+        // 1. 渲染移动端画廊
+        artworksData.forEach((art, index) => {
+            const div = document.createElement('div');
+            div.className = 'artwork-item';
+            div.innerHTML = `<img src="${art.src}" alt="${art.title}">`;
+            
+            // 点击逻辑
+            div.addEventListener('click', (e) => {
+                // 若处于取色模式，点击画作视为提取当前颜色
+                if (isPickerMode) {
+                    showColorResult(art);
+                    cancelPicker();
+                    // 取色成功后，让底板弹出
+                    bottomPanel.classList.add('show');
+                    return;
+                }
+
+                // 正常查看详情逻辑
+                document.querySelectorAll('.artwork-item').forEach(el => el.classList.remove('active'));
+                div.classList.add('active');
+                currentActiveArt = art;
+                
+                // 更新底部面板
+                pTitle.innerText = art.title;
+                pArtist.innerText = `Artist: ${art.artist}`;
+                pDesc.innerText = art.desc;
+                
+                resultBox.style.display = 'none';
+                cancelPicker();
+                
+                // 弹出控制台
+                bottomPanel.classList.add('show');
+            });
+
+            galleryArea.appendChild(div);
+        });
+
+        // 点击空白区域或顶部横条关闭面板并取消高亮
+        closePanelBtn.addEventListener('click', closePanel);
+        galleryArea.addEventListener('click', (e) => {
+            if(e.target === galleryArea) closePanel();
+        });
+
+        function closePanel() {
+            bottomPanel.classList.remove('show');
+            document.querySelectorAll('.artwork-item').forEach(el => el.classList.remove('active'));
+            cancelPicker();
+        }
+
+        // 2. 取色器开关逻辑
+        eyedropperBtn.addEventListener('click', () => {
+            if (!currentActiveArt) return;
+            
+            isPickerMode = !isPickerMode;
+            if (isPickerMode) {
+                phoneFrame.classList.add('picker-mode');
+                eyedropperBtn.classList.add('picking');
+                eyedropperBtn.innerHTML = "取色中 // 点击背景任意画作提取";
+                resultBox.style.display = 'none'; 
+                // 暂时收起底板方便用户点画作
+                bottomPanel.classList.remove('show');
+            } else {
+                cancelPicker();
+            }
+        });
+
+        // 3. 执行取色并在面板中显示
+        function showColorResult(art) {
+            resultBox.style.display = 'block';
+            hexText.innerText = art.hex;
+            colorSwatch.style.backgroundColor = art.hex;
+            colorSwatch.style.color = art.hex; 
+
+            if (art.isKey) {
+                sysNote.innerHTML = "※ 提取成功。已捕获该画作的核心色值。<br>";
+                sysNote.style.color = "#ff9e00";
+            } else {
+                sysNote.innerHTML = "※ 提取成功。已捕获该画作的核心色值。";
+                sysNote.style.color = "#888";
+            }
+        }
+
+        // 4. 重置工具状态
+        function cancelPicker() {
+            isPickerMode = false;
+            phoneFrame.classList.remove('picker-mode');
+            eyedropperBtn.classList.remove('picking');
+            eyedropperBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path><path d="M15 5l4 4"></path></svg> 激活色彩提取笔`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>江城创意科技园 - 官方网站门户</title>
+    <style>
+        /* 基础重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        body { background-color: #f4f6f9; color: #333; line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* 顶部导航栏 */
+        .header {
+            background-color: #1a365d;
+            color: #fff;
+            padding: 0 50px;
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-logo {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-logo::before {
+            content: ''; display: inline-block; width: 24px; height: 24px;
+            background: linear-gradient(135deg, #4299e1, #2b6cb0);
+            border-radius: 4px;
+        }
+        .nav-links { display: flex; gap: 30px; font-size: 15px; }
+        .nav-links li a { opacity: 0.8; transition: opacity 0.3s; }
+        .nav-links li a:hover, .nav-links li a.active { opacity: 1; font-weight: bold; }
+
+        /* 顶部大图横幅 (Hero Section) */
+        .hero {
+            background: linear-gradient(rgba(26, 54, 93, 0.7), rgba(26, 54, 93, 0.8)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop') center/cover;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+        }
+        .hero h1 { font-size: 32px; font-weight: 500; letter-spacing: 3px; margin-bottom: 10px; }
+        .hero p { font-size: 16px; opacity: 0.8; font-weight: 300; }
+
+        /* 主体内容布局 */
+        .main-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        /* 模块面板基础样式 */
+        .panel {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .panel-header {
+            border-bottom: 1px solid #edf2f7;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafbfc;
+        }
+        .panel-header h2 { font-size: 18px; color: #2d3748; border-left: 4px solid #3182ce; padding-left: 10px; }
+        .panel-header .more { font-size: 13px; color: #718096; }
+
+        /* 列表样式 */
+        .news-list { padding: 10px 25px 25px; }
+        .news-list li {
+            padding: 15px 0;
+            border-bottom: 1px dashed #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .news-list li:last-child { border-bottom: none; }
+        .news-list li:hover { transform: translateX(5px); }
+        .news-list li a { font-size: 15px; color: #4a5568; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 20px; }
+        .news-list li a:hover { color: #3182ce; }
+        .news-list li .date { font-size: 13px; color: #a0aec0; width: 80px; text-align: right; }
+
+        /* 物业通知版块微调 */
+        .notice-list li { padding: 12px 0; }
+        .notice-list li a { font-size: 14px; }
+
+        /* 底部 */
+        .footer {
+            background: #2d3748;
+            color: #a0aec0;
+            text-align: center;
+            padding: 30px 0;
+            font-size: 13px;
+            margin-top: 50px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 900px) {
+            .main-container { grid-template-columns: 1fr; }
+            .header { padding: 0 20px; }
+            .nav-links { display: none; } /* 移动端简化隐藏导航 */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-logo">江城创意科技园</div>
+        <ul class="nav-links">
+            <li><a href="#">首页</a></li>
+            <li><a href="#">园区概况</a></li>
+            <li><a href="#">招商引资</a></li>
+            <li><a href="#">政务服务</a></li>
+            <li><a href="#" class="active">公共信息大厅</a></li>
+        </ul>
+    </header>
+
+    <!-- 视觉横幅 -->
+    <section class="hero">
+        <h1>江城创意科技园 · 智慧服务大厅</h1>
+        <p>创新驱动发展 / 科技引领未来 / 提供一站式企业服务</p>
+    </section>
+
+    <!-- 主体内容 -->
+    <main class="main-container">
+        
+        <!-- 左侧：日常园区动态 (用于伪装) -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>园区动态与政策公示</h2>
+                <a href="#" class="more">查看更多 &gt;</a>
+            </div>
+            <ul class="news-list">
+                <li>
+                    <a href="#">2026年夏季园区企业入驻“创新孵化”补贴发放公示</a>
+                    <span class="date">07-02</span>
+                </li>
+                <li>
+                    <a href="#">关于开展江城AI创新创客大赛初赛路演的通知</a>
+                    <span class="date">07-01</span>
+                </li>
+                <li>
+                    <a href="#">市科技局领导一行莅临我园进行数字产业群调研</a>
+                    <span class="date">06-28</span>
+                </li>
+                <li>
+                    <a href="#">科技园A区二期数据中心网络光缆扩容施工完成通报</a>
+                    <span class="date">06-25</span>
+                </li>
+                <li>
+                    <a href="#">园区新入驻企业工商财税一站式办理指南 (2026版)</a>
+                    <span class="date">06-15</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 右侧：物业服务与公告 -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2>物业通知公告</h2>
+            </div>
+            <ul class="news-list notice-list">
+                <li>
+                    <a href="#">关于B区地下车库局部封闭施工的通知</a>
+                    <span class="date">07-03</span>
+                </li>
+                <li>
+                    <a href="#">7月份园区防台风及防汛排涝安全检查安排</a>
+                    <span class="date">07-02</span>
+                </li>
+                
+                <!-- 核心线索：完全隐蔽在代码深处的 Hex 加密路由 -->
+                <li>
+                    <a href="#" onclick="sysRedirect(event, '0x7365612e68746d6c')">园区物业官方论坛 · 违规高额电费公告</a>
+                    <span class="date">07-01</span>
+                </li>
+                
+                <li>
+                    <a href="#">园区中央空调夏季供冷时段调整方案</a>
+                    <span class="date">06-30</span>
+                </li>
+                <li>
+                    <a href="#">关于C区货梯定期维保停用的提前告知书</a>
+                    <span class="date">06-28</span>
+                </li>
+            </ul>
+        </section>
+
+    </main>
+
+    <!-- 底部版权信息 -->
+    <footer class="footer">
+        <p>版权所有 © 2026 江城创意科技园管理委员会</p>
+        <p>ICP备案号：江ICP备20260703号-1 | 网站维护：江城数字后勤中心</p>
+    </footer>
+
+    <!-- 隐藏的路由解密脚本 -->
+    <script>
+        // 伪装成官方园区的内部安全路由网关
+        function sysRedirect(event, token) {
+            event.preventDefault(); // 阻止默认的 # 跳转
+            
+            // 安全校验：确认是否为内部十六进制令牌
+            if (!token || !token.startsWith('0x')) {
+                console.warn('[System_Auth] 令牌验证失败。');
+                return;
+            }
+            
+            // Hex 逆向解密引擎，还原目标地址
+            let destUrl = '';
+            let hexSequence = token.substring(2);
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substr(i, 2), 16));
+            }
+            
+            // 执行内部重定向，开启新标签页
+            window.open(destUrl, '_blank');
+        }
+    </script>
+
+</body>
+</html>
