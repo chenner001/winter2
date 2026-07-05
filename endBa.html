@@ -32,8 +32,10 @@
             padding: 20px;
             box-sizing: border-box;
             
-            /* 核心：设为完全透明，与纯黑背景融为一体 */
-            color: transparent; 
+            /* 【核心修复】：手机端 color: transparent 选中后经常无法变色。
+               改为与背景色一模一样的颜色，实现完美隐身 */
+            color: #020202; 
+            -webkit-text-fill-color: #020202; /* 兼容 Safari 渲染 */
             
             /* 手机端适配：允许长按选中 */
             user-select: text; 
@@ -52,6 +54,7 @@
         .easter-egg-matrix::selection {
             background-color: #f8f8f2;
             color: #000;
+            -webkit-text-fill-color: #000; /* 强制手机端选中后文字变黑 */
             text-shadow: none;
         }
         .easter-egg-matrix::-moz-selection {
