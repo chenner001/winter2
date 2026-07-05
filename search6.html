@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>江城创客云中心 - Search</title>
+    <style>
+        /* 基础重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #ffffff; 
+            color: #202124; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
+            overflow-x: hidden;
+        }
+
+        /* --- 顶部固定导航栏 --- */
+        .header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 20px 30px 0 30px;
+            border-bottom: 1px solid #ebebeb;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* 纯净版 Search Logo */
+        .logo {
+            font-size: 24px;
+            font-weight: 500;
+            color: #5f6368;
+            letter-spacing: 1px;
+            margin-right: 40px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        /* 顶部的胶囊搜索框 */
+        .search-box {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 690px;
+            height: 44px;
+            background: #fff;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 0 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s;
+        }
+        .search-box:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #202124;
+            padding-left: 10px;
+        }
+
+        /* 搜索框内的清理图标 */
+        .clear-btn {
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 10px;
+            border-right: 1px solid #dfe1e5;
+        }
+        .search-icon-small {
+            padding-left: 15px;
+            color: #4285f4;
+            cursor: pointer;
+        }
+
+        /* 分类导航 */
+        .nav-tabs {
+            display: flex;
+            gap: 25px;
+            margin-left: 130px; /* 对齐搜索框 */
+            font-size: 14px;
+            color: #5f6368;
+        }
+        .nav-tab {
+            padding-bottom: 12px;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            font-weight: 500;
+        }
+
+        /* --- 搜索结果展示区 --- */
+        .main-content {
+            padding: 30px 160px;
+            max-width: 850px;
+        }
+        
+        /* 搜索用时提示 */
+        .result-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 单个搜索结果卡片 */
+        .result-item {
+            margin-bottom: 35px;
+        }
+
+        .result-breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #202124;
+            margin-bottom: 5px;
+            gap: 8px;
+        }
+        .result-icon {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #f1f3f4;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 14px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            text-decoration: none;
+            font-weight: 400;
+            line-height: 1.3;
+            cursor: pointer;
+        }
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-desc {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+            margin-top: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .result-date {
+            color: #70757a;
+        }
+        
+        /* 特殊高亮字眼 (模拟浏览器加粗) */
+        .kw {
+            font-weight: bold;
+            color: #202124;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .nav-tabs { margin-left: 10px; }
+            .main-content { padding: 20px 15px; }
+            .logo { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航与搜索区 -->
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">Search</div>
+            <div class="search-box">
+                <!-- 搜索词设定 -->
+                <input type="text" class="search-input" value="江城创客云中心" id="searchInput" spellcheck="false">
+                <div class="clear-btn" onclick="document.getElementById('searchInput').value=''">×</div>
+                <div class="search-icon-small">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                </div>
+            </div>
+        </div>
+        <div class="nav-tabs">
+            <div class="nav-tab active">全部</div>
+            <div class="nav-tab">新闻</div>
+            <div class="nav-tab">贴吧</div>
+            <div class="nav-tab">图片</div>
+            <div class="nav-tab">更多</div>
+        </div>
+    </header>
+
+    <!-- 搜索结果区 -->
+    <div class="main-content">
+        <div class="result-stats">找到约 3,210,000 条结果 （用时 0.22 秒）</div>
+
+        <!-- 【目标结果：加密网页跳转】 jc_cloud_portal.html -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">☁️</div>
+                <span>https://console.jc-cloud.net › portal</span>
+            </div>
+            <div class="result-title" onclick="executeJump('0x6a635f636c6f75645f706f7274616c2e68746d6c')">
+                <span class="kw">江城创客云中心</span> - 开发者管理控制台
+            </div>
+            <div class="result-desc">
+                <span class="kw">江城创客云中心</span>提供企业级高算力服务器托管、数字渲染集群与AI大模型训练环境。登入控制台以监控您的云端物理资产。（系统通告：当前C座南区高密度算力集群网络端口异常离线中，运维正在排查...）
+            </div>
+        </div>
+        
+        <!-- 干扰项 1：停电事故新闻 (补全断联真相) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">📰</div>
+                <span>https://www.jc-news.com › tech › 20260625</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                【紧急突发】极端高温致<span class="kw">江城创客云中心</span>冷却系统瘫痪，C座紧急物理断电
+            </div>
+            <div class="result-desc">
+                <span class="result-date">2026年6月25日 — </span>受连日极端高温干旱天气影响，<span class="kw">江城创客云中心</span>C座顶层的大型水冷散热塔今日凌晨发生不可逆故障。为保护底层核心AI超算集群免受热损伤熔毁，中心已于03:16分强制执行了物理切断电源协议，部分依赖该节点的云服务宣告中断。
+            </div>
+        </div>
+
+        <!-- 干扰项 2：论坛求助 (呼应Vapor平台和断网) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">知</div>
+                <span>https://www.zhihu.com › question</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                如何看待<span class="kw">江城创客云中心</span>这次的“拔网线”事故？ - 知乎
+            </div>
+            <div class="result-desc">
+                损失惨重。我们工作室的外包渲染农场全挂了！最诡异的是，我听云中心内部的朋友说，这次紧急断电甚至不是运维人员操作的。而是温控系统过载后，C座内部的一个高级AI模型为了自保，主动越权锁死了所有外部端口，并强制拉闸了主电源。
+            </div>
+        </div>
+
+        <!-- 干扰项 3：记者探秘 (呼应山海寄庐的幽灵身份) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">探</div>
+                <span>https://www.tech-weekly.cn › depth-report</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                探秘<span class="kw">江城创客云</span>：那些没有员工的“幽灵数字公司”
+            </div>
+            <div class="result-desc">
+                在<span class="kw">江城创客云中心</span>的入驻名单上，有许多近期声名鹊起的神秘数字工作室。但记者实地探访发现，这些登记的办公场地内没有任何工位与人类员工，只有密密麻麻的黑色机柜和轰鸣的散热系统...
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * 加密跳转逻辑
+         * @param {string} token - 目标地址的十六进制代码 (以 0x 开头)
+         * 0x6a635f636c6f75645f706f7274616c2e68746d6c ->
+         */
+        function executeJump(token) {
+            let destUrl = '';
+            // 去除 0x 前缀
+            let hexSequence = token.substring(2);
+            
+            // 将十六进制转回 ASCII 字符串
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substring(i, i + 2), 16));
+            }
+            
+            // 创建一个隐形的 <a> 标签来模拟点击，绕过本地浏览器的弹窗拦截
+            let link = document.createElement('a');
+            link.href = destUrl;
+            link.target = '_blank'; // 设置在新标签页打开
+            document.body.appendChild(link);
+            link.click(); // 触发点击
+            document.body.removeChild(link); // 用完即焚
+        }
+    </script>
+</body>
+</html>

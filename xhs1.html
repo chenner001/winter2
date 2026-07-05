@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>秋屿冬 的主页 - 小红书</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root { --xhs-red: #ff2442; --bg-gray: #f5f5f5; --text-main: #333; --text-sub: #999; }
+        body { 
+            background: #333; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+        }
+
+        /* 隐藏全局滚动条 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; 
+            height: 812px; 
+            background: var(--bg-gray); 
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px;
+            border: 8px solid #111;
+            display: flex;
+            flex-direction: column;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 悬浮顶部导航 ================= */
+        .top-nav {
+            position: absolute; top: 0; left: 0; width: 100%;
+            height: 60px; padding: 10px 16px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 20; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .nav-btn { font-size: 26px; cursor: pointer; }
+        .nav-btn.share { font-size: 22px; }
+
+        /* ================= 主滚动区 ================= */
+        .main-scroll {
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #fff;
+        }
+
+        /* ================= 个人信息头部 ================= */
+        .profile-bg {
+            width: 100%; height: 160px;
+            background: linear-gradient(135deg, #444, #222); /* 默认深色背景 */
+            background-image: url('网易云.png');
+            background-size: cover; background-position: center;
+        }
+
+        .profile-info {
+            position: relative; padding: 0 16px 20px; background: #fff;
+        }
+
+        .avatar-row {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-top: -24px; margin-bottom: 12px;
+        }
+        .avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid #fff; background: #eee;
+            background-image: url('陈屿秋.jpg'); background-size: cover; background-position: center;
+        }
+        .actions-btn {
+            display: flex; gap: 8px; margin-bottom: 8px;
+        }
+        .btn-msg {
+            background: #fff; border: 1px solid #ccc; color: #333;
+            padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+        }
+        .btn-follow {
+            background: var(--xhs-red); color: #fff; border: 1px solid var(--xhs-red);
+            padding: 6px 20px; border-radius: 20px; font-size: 13px; font-weight: 500;
+        }
+
+        .username { font-size: 22px; font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .gender-tag { font-size: 10px; background: #f0f0f0; color: #666; padding: 2px 6px; border-radius: 10px; font-weight: normal; }
+        .xhs-id { font-size: 11px; color: var(--text-sub); margin-bottom: 12px; }
+        .desc { font-size: 13px; color: #333; line-height: 1.5; margin-bottom: 16px; white-space: pre-line; }
+
+        .stats-row { display: flex; gap: 16px; font-size: 12px; color: var(--text-sub); }
+        .stats-row span { font-size: 14px; font-weight: bold; color: var(--text-main); margin-right: 3px; }
+
+        /* ================= 标签导航 ================= */
+        .tabs-sticky {
+            position: sticky; top: -1px; background: #fff; z-index: 10;
+            display: flex; justify-content: space-around;
+            border-bottom: 1px solid #f5f5f5; border-radius: 12px 12px 0 0;
+        }
+        .tab-item {
+            padding: 12px 0; font-size: 15px; color: var(--text-sub); position: relative; transition: 0.2s;
+        }
+        .tab-item.active { color: var(--text-main); font-weight: bold; font-size: 16px; }
+        .tab-item.active::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 24px; height: 3px; background: var(--xhs-red); border-radius: 2px;
+        }
+
+        /* ================= 内容区 ================= */
+        .tab-content { display: none; background: var(--bg-gray); padding: 6px; min-height: 400px;}
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        /* 瀑布流 (使用 column-count 模拟双列) */
+        .waterfall {
+            column-count: 2; column-gap: 6px;
+        }
+        .note-card {
+            break-inside: avoid; background: #fff; border-radius: 6px; overflow: hidden;
+            margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); cursor: pointer;
+        }
+        .note-cover { width: 100%; display: block; object-fit: cover; background: #eee;}
+        .note-info { padding: 8px; }
+        .note-title { font-size: 13px; font-weight: 500; color: #333; line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .note-footer { display: flex; justify-content: space-between; align-items: center; }
+        .author-mini { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #666; }
+        .author-mini img { width: 16px; height: 16px; border-radius: 50%; }
+        .likes { font-size: 10px; color: #999; }
+
+        /* 密码收藏夹区域 */
+        .locked-folder {
+            background: #fff; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 200px; margin: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); cursor: pointer;
+        }
+        .locked-folder .lock-icon { font-size: 32px; margin-bottom: 10px; }
+        .locked-folder .lock-text { font-size: 14px; font-weight: bold; color: #555; }
+
+        .unlocked-post {
+            display: none; background: #fff; border-radius: 8px; padding: 20px 16px; margin: 10px;
+            animation: fadeIn 0.4s ease;
+        }
+        .unlocked-post h2 { font-size: 16px; margin-bottom: 12px; }
+        .unlocked-post p { font-size: 14px; color: #444; line-height: 1.6; margin-bottom: 15px; white-space: pre-line; }
+        .tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .tag-blue { color: #135b9c; font-size: 13px; }
+        .game-imgs { display: flex; flex-direction: column; gap: 10px; }
+        .game-imgs img { width: 100%; border-radius: 6px; border: 1px solid #eee; object-fit: cover; }
+
+        /* ================= 帖子全屏详情页 ================= */
+        .post-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 100; display: flex; flex-direction: column;
+            transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .post-modal.show { transform: translateX(0); }
+
+        .post-header {
+            height: 50px; display: flex; align-items: center; padding: 0 16px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .post-back { font-size: 24px; color: #333; margin-right: 15px; cursor: pointer; }
+        .post-author-row { display: flex; align-items: center; gap: 8px; flex: 1; }
+        .post-author-row img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #eee; }
+        .post-author-row .name { font-size: 14px; font-weight: 500; }
+        .post-follow-btn { border: 1px solid var(--xhs-red); color: var(--xhs-red); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+
+        .post-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        
+        .post-image { width: 100%; display: block; object-fit: cover; }
+        
+        .post-body { padding: 16px; }
+        .post-detail-title { font-size: 16px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; }
+        .post-detail-desc { font-size: 14px; color: #333; line-height: 1.6; white-space: pre-line; margin-bottom: 12px; }
+        .post-detail-time { font-size: 11px; color: var(--text-sub); margin-bottom: 20px; }
+
+        .comment-divider { font-size: 12px; color: #666; font-weight: bold; margin-bottom: 16px; }
+        .comment-item { display: flex; gap: 10px; margin-bottom: 20px; }
+        .comment-avatar { width: 30px; height: 30px; border-radius: 50%; background: #f0f0f0; flex-shrink: 0; }
+        .comment-main { flex: 1; }
+        .comment-name { font-size: 12px; color: #666; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .author-tag { font-size: 9px; background: #f2f2f2; color: #333; padding: 2px 4px; border-radius: 8px; }
+        .comment-text { font-size: 13px; color: #333; line-height: 1.5; margin-bottom: 6px; }
+        .comment-meta { font-size: 11px; color: #999; display: flex; gap: 15px; }
+
+        .post-footer {
+            height: 56px; border-top: 1px solid #f5f5f5; display: flex; align-items: center; padding: 0 16px; gap: 15px; background: #fff;
+        }
+        .fake-input { flex: 1; background: #f5f5f5; border-radius: 20px; padding: 8px 15px; font-size: 13px; color: #999; }
+        .footer-icons { display: flex; gap: 16px; font-size: 18px; color: #333; }
+        .footer-icons span { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+
+        /* ================= 密码模态框 ================= */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center; z-index: 200;
+        }
+        .modal-box {
+            background: #fff; width: 80%; padding: 24px; border-radius: 16px; text-align: center;
+            transform: scale(0.9); opacity: 0; transition: all 0.3s;
+        }
+        .modal-box.show { transform: scale(1); opacity: 1; }
+        .modal-title { font-size: 16px; font-weight: bold; margin-bottom: 16px; }
+        .pwd-input {
+            width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 14px; text-align: center; outline: none; background: #f9f9f9;
+        }
+        .pwd-input:focus { border-color: var(--xhs-red); background: #fff; }
+        .pwd-error { color: var(--xhs-red); font-size: 11px; margin-bottom: 16px; height: 15px; visibility: hidden; }
+        .btn-group { display: flex; gap: 12px; }
+        .btn { flex: 1; padding: 8px; border-radius: 20px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-cancel { background: #f2f2f2; color: #555; }
+        .btn-confirm { background: var(--xhs-red); color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        
+        <!-- 移动端悬浮顶部导航 -->
+        <div class="top-nav">
+            <div class="nav-btn" onclick="history.back()">‹</div>
+            <div class="nav-btn share">⍈</div>
+        </div>
+
+        <div class="main-scroll">
+            
+            <!-- 个人信息头部 -->
+            <div class="profile-bg"></div>
+            <div class="profile-info">
+                <div class="avatar-row">
+                    <div class="avatar"></div>
+                    <div class="actions-btn">
+                        <div class="btn-msg">发私信</div>
+                        <div class="btn-follow">关注</div>
+                    </div>
+                </div>
+
+                <div class="username">秋屿冬 <span class="gender-tag">♂</span></div>
+                <div class="xhs-id">小红书号：QY_WinterEcho</div>
+                <div class="desc">画手 / 极夜里的光源。<br>记录一些日常，和某些不按时吃饭的小朋友。</div>
+                <div class="stats-row">
+                    <div><span>1</span>关注</div>
+                    <div><span>1.4w</span>粉丝</div>
+                    <div><span>8.6w</span>获赞与收藏</div>
+                </div>
+            </div>
+
+            <!-- Tab 切换 -->
+            <div class="tabs-sticky">
+                <div class="tab-item active" onclick="switchTab('notes', this)">笔记</div>
+                <div class="tab-item" onclick="switchTab('collections', this)">收藏</div>
+                <div class="tab-item">赞过</div>
+            </div>
+
+            <!-- 内容区：笔记 -->
+            <div id="notes" class="tab-content active">
+                <div class="waterfall">
+                    <!-- 笔记 1 -->
+                    <div class="note-card" onclick="openPostModal(0)">
+                        <img src="粥.png" class="note-cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'130%\'%3E%3Crect width=\'100%\' height=\'100%\' fill=\'%23ffe6e6\'/%3E%3C/svg%3E'">
+                        <div class="note-info">
+                            <div class="note-title">给胃病姑娘的深夜养胃粥指南🥣</div>
+                            <div class="note-footer">
+                                <div class="author-mini"><img src="陈屿秋.jpg" onerror="this.style.display='none'"> 秋屿冬</div>
+                                <div class="likes">🤍 4208</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 笔记 2 -->
+                    <div class="note-card" onclick="openPostModal(1)">
+                        <img src="云.jpg" class="note-cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\'%3E%3Crect width=\'100%\' height=\'100%\' fill=\'%23e6f2ff\'/%3E%3C/svg%3E'">
+                        <div class="note-info">
+                            <div class="note-title">捕捉到一朵像猫的云🐈☁️</div>
+                            <div class="note-footer">
+                                <div class="author-mini"><img src="陈屿秋.jpg" onerror="this.style.display='none'"> 秋屿冬</div>
+                                <div class="likes">🤍 2156</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 笔记 3 -->
+                    <div class="note-card" onclick="openPostModal(2)">
+                        <img src="星光.png" class="note-cover" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'120%\'%3E%3Crect width=\'100%\' height=\'100%\' fill=\'%23e6ffe6\'/%3E%3C/svg%3E'">
+                        <div class="note-info">
+                            <div class="note-title">关于光的折射✨</div>
+                            <div class="note-footer">
+                                <div class="author-mini"><img src="陈屿秋.jpg" onerror="this.style.display='none'"> 秋屿冬</div>
+                                <div class="likes">🤍 8902</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容区：收藏夹 -->
+            <div id="collections" class="tab-content">
+                <div id="lockedView">
+                    <div class="locked-folder" onclick="openModal()">
+                        <div class="lock-icon">🔒</div>
+                        <div class="lock-text">沉溺在此</div>
+                    </div>
+                </div>
+
+                <!-- 解锁后显示的内容 -->
+                <div id="unlockedView" class="unlocked-post">
+                    <h2>🎮 送给某人的云端庄园（未完工版）</h2>
+                    <p>冬冬，你说过异地恋最遗憾的是不能在一张沙发上打游戏。<br><br>所以我用下班时间，偷偷为我们定制了一个专属的联机Mod庄园。里面的风车、猫咪和满地星空都是我一行行画好、把代码封装进去的。<br><br>本来想等你生日那天作为惊喜送给你，但我最近机房的设备老是报错停电，我怕数据丢失，就提前上传备份啦。去工坊下载它，我们就能搬进新家了。</p>
+                    
+                    <div class="tags-row">
+                        <span class="tag-blue">#Vapor游戏平台</span>
+                        <span class="tag-blue">#北极星物语</span>
+                        <span class="tag-blue">#双人联机Mod</span>
+                    </div>
+
+                    <div class="game-imgs">
+                        <img src="jietu1.png" alt="截图1" onerror="this.style.display='none'">
+                        <img src="jietu2.png" alt="截图2" onerror="this.style.display='none'">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ================= 移动端右侧滑出的帖子详情页 ================= -->
+        <div class="post-modal" id="postModal">
+            <div class="post-header">
+                <div class="post-back" onclick="closePostModal()">‹</div>
+                <div class="post-author-row">
+                    <img src="陈屿秋.jpg" onerror="this.style.display='none'">
+                    <span class="name">秋屿冬</span>
+                </div>
+                <div class="post-follow-btn">关注</div>
+            </div>
+
+            <div class="post-scroll">
+                <img id="modalImg" class="post-image" src="" onerror="this.style.display='none'">
+                
+                <div class="post-body">
+                    <div class="post-detail-title" id="modalTitle"></div>
+                    <div class="post-detail-desc" id="modalDesc"></div>
+                    <div class="post-detail-time" id="modalTime"></div>
+                    
+                    <div class="comment-divider" id="modalCommentCount">共 0 条评论</div>
+                    
+                    <!-- 评论列表动态注入区 -->
+                    <div id="modalComments"></div>
+                </div>
+            </div>
+
+            <div class="post-footer">
+                <div class="fake-input">说点什么...</div>
+                <div class="footer-icons">
+                    <span>🤍 赞</span>
+                    <span>⭐ 收藏</span>
+                    <span>💬</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= 密码输入弹窗 ================= -->
+        <div class="modal-overlay" id="pwdModal">
+            <div class="modal-box" id="modalBox">
+                <div class="modal-title">输入访问密钥</div>
+                <input type="text" class="pwd-input" id="pwdInput" placeholder="请输入密码" autocomplete="off" maxlength="6">
+                <div class="pwd-error" id="pwdError">密码错误，请重试</div>
+                <div class="btn-group">
+                    <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+                    <button class="btn btn-confirm" onclick="verifyPwd()">确认</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 剧情向评论数据字典 ---
+        const postsData = [
+            {
+                img: "粥.png",
+                title: "给胃病姑娘的深夜养胃粥指南🥣",
+                desc: "某人又因为写稿忘了吃饭，胃痛到睡不着。异地没办法当面照顾，只能把熬粥的秘籍写下来。用铁棍山药去皮切块，加小米慢熬40分钟，最后放一点点冰糖。希望你能照顾好自己，按时吃饭呀。",
+                time: "04-12",
+                comments: [
+                    { name: "极夜", avatar: "url('沈郁冬.jpg')", content: "收到啦！已经乖乖喝完一大碗了，胃里暖呼呼的，不过下次能不能多放两颗冰糖？[可怜]", time: "04-12", isAuthor: false },
+                    { name: "秋屿冬", avatar: "#f0f0f0", content: "回复 极夜：不行，太甜了对胃不好。听话。", time: "04-12", isAuthor: true },
+                    { name: "西湖醋余", avatar: "url('西湖醋余.jpg')", content: "好家伙，我大半夜刷到这个，手里的泡面突然就不香了。陈大画师，记得叮嘱她别又熬夜写稿！", time: "04-12", isAuthor: false },
+                    { name: "秋屿冬", avatar: "#f0f0f0", content: "回复 西湖醋余：会的，麻烦你平时在新加坡也多帮我盯着她点。", time: "04-12", isAuthor: true },
+                    { name: "草莓碎碎冰", avatar: "#e0f7fa", content: "天哪，好温柔的神仙男朋友，狠狠羡慕了！", time: "04-13", isAuthor: false }
+                ]
+            },
+            {
+                img: "云.jpg",
+                title: "捕捉到一朵像猫的云🐈☁️",
+                desc: "傍晚散步，抬头看到一朵云，耳朵和尾巴都翘着，特别像一只伸懒腰的猫。拍照发给某人，某人说想吃掉这朵棉花糖。",
+                time: "05-20",
+                comments: [
+                    { name: "极夜", avatar: "url('沈郁冬.jpg')", content: "明明更像一只吃饱了撑的胖橘！一口吞掉！[吃瓜]", time: "05-20", isAuthor: false },
+                    { name: "秋屿冬", avatar: "#f0f0f0", content: "回复 极夜：没你可爱。", time: "05-20", isAuthor: true },
+                    { name: "西湖醋余", avatar: "url('西湖醋余.jpg')", content: "受不了了，你们俩谈恋爱能不能不要在大马路上秀恩爱，我路过都要被绊一跤！", time: "05-20", isAuthor: false },
+                    { name: "浪漫收集员", avatar: "#fce4ec", content: "好浪漫的视角，天上的云都有了形状☁️", time: "05-20", isAuthor: false }
+                ]
+            },
+            {
+                img: "星光.png",
+                title: "关于光的折射✨",
+                desc: "尝试用笔刷还原星光落在湖面上，那种波光粼粼又破碎的折射感。画了很久，总觉得还差一点点灵动。不过没关系，画里的星光不会熄灭，正如有些人。",
+                time: "06-15",
+                comments: [
+                    { name: "色彩魔法师", avatar: "#ede7f6", content: "绝美！这光影处理得太有质感了，膜拜大佬🙇‍♀️", time: "06-15", isAuthor: false },
+                    { name: "极夜", avatar: "url('沈郁冬.jpg')", content: "画里的星光不会熄灭，某人也要一直发光呀。[心]", time: "06-15", isAuthor: false },
+                    { name: "秋屿冬", avatar: "#f0f0f0", content: "回复 极夜：你在，光就在。", time: "06-15", isAuthor: true },
+                    { name: "西湖醋余", avatar: "url('西湖醋余.jpg')", content: "啧啧啧，这画面的光影绝了。顺便替某位失眠患者催个更，她昨晚盯着这幅画看了半小时才睡着。", time: "06-15", isAuthor: false },
+                    { name: "银河铁道", avatar: "#e3f2fd", content: "感觉能透过屏幕看到水面的闪烁，笔触太神了，求原图当壁纸！！", time: "06-15", isAuthor: false }
+                ]
+            }
+        ];
+
+        // --- 帖子弹窗逻辑 ---
+        const postModal = document.getElementById('postModal');
+        
+        function openPostModal(index) {
+            const data = postsData[index];
+            
+            // 填充内容
+            document.getElementById('modalImg').src = data.img;
+            document.getElementById('modalImg').style.display = 'block';
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalDesc').innerText = data.desc;
+            document.getElementById('modalTime').innerText = data.time;
+            document.getElementById('modalCommentCount').innerText = `共 ${data.comments.length} 条评论`;
+            
+            // 生成评论区HTML
+            let commentsHtml = '';
+            data.comments.forEach(c => {
+                const authorTag = c.isAuthor ? '<span class="author-tag">作者</span>' : '';
+                const avatarStyle = c.isAuthor ? `background: url('陈屿秋.jpg') center/cover;` : `background: ${c.avatar} center/cover;`;
+                
+                commentsHtml += `
+                    <div class="comment-item">
+                        <div class="comment-avatar" style="${avatarStyle}"></div>
+                        <div class="comment-main">
+                            <div class="comment-name">${c.name} ${authorTag}</div>
+                            <div class="comment-text">${c.content}</div>
+                            <div class="comment-meta">
+                                <span>${c.time}</span>
+                                <span>回复</span>
+                                <span style="margin-left: auto;">🤍</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('modalComments').innerHTML = commentsHtml;
+            
+            // 滑入弹窗
+            postModal.classList.add('show');
+        }
+
+        function closePostModal() {
+            postModal.classList.remove('show');
+        }
+
+        // --- 原有 Tab 与 密码校验逻辑 ---
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            el.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        const modal = document.getElementById('pwdModal');
+        const modalBox = document.getElementById('modalBox');
+        const pwdInput = document.getElementById('pwdInput');
+        const pwdError = document.getElementById('pwdError');
+
+        function openModal() {
+            modal.style.display = 'flex';
+            pwdInput.value = '';
+            pwdError.style.visibility = 'hidden';
+            setTimeout(() => { modalBox.classList.add('show'); }, 10);
+        }
+
+        function closeModal() {
+            modalBox.classList.remove('show');
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
+        }
+
+        function verifyPwd() {
+            const val = pwdInput.value.trim().toLowerCase();
+            // 六位十六进制色值：ff9900 或 ff9933
+            if (btoa(val) === 'ZmY5OTAw' || btoa(val) === 'ZmY5OTMz') { 
+                closeModal();
+                setTimeout(() => {
+                    document.getElementById('lockedView').style.display = 'none';
+                    document.getElementById('unlockedView').style.display = 'block';
+                }, 300);
+            } else {
+                pwdError.style.visibility = 'visible';
+                modalBox.style.transform = 'scale(1) translateX(-5px)';
+                setTimeout(() => modalBox.style.transform = 'scale(1) translateX(5px)', 100);
+                setTimeout(() => modalBox.style.transform = 'scale(1) translateX(0)', 200);
+            }
+        }
+
+        pwdInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                pwdInput.blur();
+                verifyPwd();
+            }
+        });
+    </script>
+</body>
+</html>

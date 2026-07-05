@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小红书 - 你的生活指南</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            background-color: #333; /* 衬托手机模拟器的外背景 */
+            display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+        }
+
+        /* 隐藏全局滚动条 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; 
+            height: 812px; 
+            background: #f5f5f5; /* 小红书常用的浅灰底色 */
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px;
+            border: 8px solid #111;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 移动端顶部导航栏 ================= */
+        .mobile-header {
+            background: #fff;
+            padding-top: 10px;
+            z-index: 100;
+        }
+
+        /* 搜索行 */
+        .search-row {
+            display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+        }
+        .user-icon { font-size: 24px; color: #333; }
+        .search-box {
+            flex: 1; height: 32px; background: #f5f5f5; border-radius: 16px;
+            display: flex; align-items: center; padding: 0 12px; position: relative;
+        }
+        .search-box .icon { font-size: 14px; color: #999; margin-right: 6px;}
+        .search-box input {
+            flex: 1; border: none; background: transparent; outline: none; font-size: 14px; color: #333;
+        }
+        .search-btn {
+            background: #ff2442; color: #fff; border: none; border-radius: 16px; 
+            padding: 4px 12px; font-size: 13px; font-weight: 500; cursor: pointer;
+        }
+        
+        /* 频道标签行 (支持横向滑动) */
+        .nav-tabs {
+            display: flex; gap: 16px; padding: 8px 16px 12px;
+            overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+        }
+        .nav-tabs::after { content: ''; padding-right: 16px; }
+        .tab-item { font-size: 15px; color: #666; position: relative; cursor: pointer; transition: 0.2s;}
+        .tab-item.active { font-size: 17px; font-weight: bold; color: #333; }
+        .tab-item.active::after {
+            content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+            width: 16px; height: 3px; background: #ff2442; border-radius: 2px;
+        }
+
+        /* ================= 瀑布流内容区 ================= */
+        .content-scroll {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px;
+        }
+
+        /* 小红书双列布局 */
+        .waterfall {
+            display: flex;
+            gap: 10px;
+        }
+        .column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 笔记卡片 */
+        .note-card {
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .note-cover { width: 100%; display: block; object-fit: cover;}
+        
+        .note-info { padding: 10px; }
+        .note-title {
+            font-size: 14px; font-weight: 500; color: #333; line-height: 1.4;
+            margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .note-author {
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .author-info { display: flex; align-items: center; gap: 6px; }
+        .author-avatar { width: 18px; height: 18px; border-radius: 50%; background-size: cover; border: 1px solid #eee;}
+        .author-name { font-size: 11px; color: #666; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        
+        .likes { font-size: 11px; color: #999; display: flex; align-items: center; gap: 2px;}
+
+        /* ================= 底部全局导航栏 ================= */
+        .bottom-nav {
+            height: 60px; background: #fff; border-top: 1px solid #f0f0f0;
+            display: flex; justify-content: space-around; align-items: center;
+            padding-bottom: 5px; flex-shrink: 0;
+        }
+        .nav-item { font-size: 16px; color: #999; font-weight: 500; }
+        .nav-item.active { color: #333; font-weight: bold; }
+        .add-btn { 
+            width: 44px; height: 32px; background: #ff2442; color: #fff; 
+            border-radius: 12px; display: flex; justify-content: center; align-items: center;
+            font-size: 20px; font-weight: bold;
+        }
+
+        /* ================= 轻提示 Toast ================= */
+        .toast {
+            position: absolute; top: 120px; left: 50%; transform: translateX(-50%) translateY(-20px);
+            background: rgba(0, 0, 0, 0.7); color: #fff; padding: 10px 24px;
+            border-radius: 20px; font-size: 13px; opacity: 0; pointer-events: none;
+            transition: all 0.3s ease; z-index: 9999; white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        
+        <!-- 移动端顶部导航 -->
+        <div class="mobile-header">
+            <div class="search-row">
+                <div class="user-icon">☰</div>
+                <div class="search-box">
+                    <span class="icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="新加坡生活日常..." autocomplete="off">
+                </div>
+                <button class="search-btn" id="searchBtn">搜索</button>
+            </div>
+            
+            <div class="nav-tabs">
+                <div class="tab-item">关注</div>
+                <div class="tab-item active">发现</div>
+                <div class="tab-item">新加坡</div>
+                <div class="tab-item">穿搭</div>
+                <div class="tab-item">美食</div>
+                <div class="tab-item">绘画</div>
+                <div class="tab-item">旅行</div>
+            </div>
+        </div>
+
+        <!-- 瀑布流内容区 -->
+        <div class="content-scroll">
+            <div class="waterfall">
+                
+                <!-- 左列 -->
+                <div class="column">
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/500?random=1" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">江城绝美落日打卡地，仿佛掉进了油画里！</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=11')"></div>
+                                    <span class="author-name">陈星星</span>
+                                </div>
+                                <div class="likes">🤍 1.2w</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/600?random=3" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">极简高级感桌面布置指南，在家办公也要仪式感！</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=13')"></div>
+                                    <span class="author-name">Space空间设计</span>
+                                </div>
+                                <div class="likes">🤍 3.5w</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/550?random=5" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">超治愈的双人联机种田游戏，异地恋必备！</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=15')"></div>
+                                    <span class="author-name">游研社小喵</span>
+                                </div>
+                                <div class="likes">🤍 9982</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右列 -->
+                <div class="column">
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/300?random=2" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">自由撰稿人的日常：一台电脑走天下</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=12')"></div>
+                                    <span class="author-name">码字机小林</span>
+                                </div>
+                                <div class="likes">🤍 8654</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/400?random=4" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">2026江城当代艺术双年展，不可错过的光影盛宴</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=14')"></div>
+                                    <span class="author-name">艺术前线探展</span>
+                                </div>
+                                <div class="likes">🤍 2.1w</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/350?random=6" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">深夜的一碗白粥，是最抚慰人心的烟火气。</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=16')"></div>
+                                    <span class="author-name">美食记</span>
+                                </div>
+                                <div class="likes">🤍 4521</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="note-card">
+                        <img src="https://picsum.photos/400/480?random=7" class="note-cover">
+                        <div class="note-info">
+                            <div class="note-title">独立插画师接单经验分享，如何与甲方沟通？</div>
+                            <div class="note-author">
+                                <div class="author-info">
+                                    <div class="author-avatar" style="background-image: url('https://picsum.photos/50/50?random=17')"></div>
+                                    <span class="author-name">画画的阿卷</span>
+                                </div>
+                                <div class="likes">🤍 1.8w</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 移动端底部导航 -->
+        <div class="bottom-nav">
+            <div class="nav-item active">首页</div>
+            <div class="nav-item">购物</div>
+            <div class="add-btn">+</div>
+            <div class="nav-item">消息</div>
+            <div class="nav-item">我</div>
+        </div>
+
+        <!-- 提示框 -->
+        <div class="toast" id="toast">未找到相关笔记</div>
+
+    </div>
+
+    <script>
+        // 显示轻提示 (Toast)
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        function doSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            // 转化为伪Hex编码进行匹配
+            const encryptedQuery = encodeURIComponent(query.toLowerCase()).replace(/%/g, '').toLowerCase();
+
+            // 预设的加密字典（匹配词的伪Hex -> 目标网页的真实Hex）
+            const secretMap = {
+                'e7a78be5b1bfe586ac': '786873312e68746d6c'
+            };
+
+            const targetHex = secretMap[encryptedQuery];
+
+            if (targetHex) {
+                let destUrl = '';
+                // 动态解密目标地址
+                for (let i = 0; i < targetHex.length; i += 2) {
+                    destUrl += String.fromCharCode(parseInt(targetHex.substring(i, i + 2), 16));
+                }
+                
+                // 本页面跳转 (移动端H5通常在当前页打开)
+                window.location.href = destUrl;
+            } else {
+                // 搜索其他词语时，显示无结果提示
+                showToast(`未找到关于 "${query}" 的笔记`);
+            }
+        }
+
+        // 监听按钮点击
+        document.getElementById('searchBtn').addEventListener('click', doSearch);
+
+        // 监听手机键盘的搜索/回车键
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchInput').blur(); // 收起键盘
+                doSearch();
+            }
+        });
+    </script>
+</body>
+</html>

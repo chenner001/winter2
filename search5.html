@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>山海寄庐艺术工作室 - Search</title>
+    <style>
+        /* 基础重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #ffffff; 
+            color: #202124; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
+            overflow-x: hidden;
+        }
+
+        /* --- 顶部固定导航栏 --- */
+        .header {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding: 20px 30px 0 30px;
+            border-bottom: 1px solid #ebebeb;
+            z-index: 100;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        /* 纯净版 Search Logo */
+        .logo {
+            font-size: 24px;
+            font-weight: 500;
+            color: #5f6368;
+            letter-spacing: 1px;
+            margin-right: 40px;
+            cursor: pointer;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+        /* 顶部的胶囊搜索框 */
+        .search-box {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 690px;
+            height: 44px;
+            background: #fff;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 0 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s;
+        }
+        .search-box:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #202124;
+            padding-left: 10px;
+        }
+
+        /* 搜索框内的清理图标 */
+        .clear-btn {
+            color: #999;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 10px;
+            border-right: 1px solid #dfe1e5;
+        }
+        .search-icon-small {
+            padding-left: 15px;
+            color: #4285f4;
+            cursor: pointer;
+        }
+
+        /* 分类导航 */
+        .nav-tabs {
+            display: flex;
+            gap: 25px;
+            margin-left: 130px; /* 对齐搜索框 */
+            font-size: 14px;
+            color: #5f6368;
+        }
+        .nav-tab {
+            padding-bottom: 12px;
+            cursor: pointer;
+        }
+        .nav-tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            font-weight: 500;
+        }
+
+        /* --- 搜索结果展示区 --- */
+        .main-content {
+            padding: 30px 160px;
+            max-width: 850px;
+        }
+        
+        /* 搜索用时提示 */
+        .result-stats {
+            color: #70757a;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        /* 单个搜索结果卡片 */
+        .result-item {
+            margin-bottom: 35px;
+        }
+
+        .result-breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #202124;
+            margin-bottom: 5px;
+            gap: 8px;
+        }
+        .result-icon {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #f1f3f4;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 14px;
+        }
+
+        .result-title {
+            font-size: 20px;
+            color: #1a0dab;
+            text-decoration: none;
+            font-weight: 400;
+            line-height: 1.3;
+            cursor: pointer;
+        }
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-desc {
+            font-size: 14px;
+            color: #4d5156;
+            line-height: 1.58;
+            margin-top: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .result-date {
+            color: #70757a;
+        }
+        
+        /* 特殊高亮字眼 (模拟浏览器加粗) */
+        .kw {
+            font-weight: bold;
+            color: #202124;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .nav-tabs { margin-left: 10px; }
+            .main-content { padding: 20px 15px; }
+            .logo { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航与搜索区 -->
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">Search</div>
+            <div class="search-box">
+                <!-- 搜索词设定 -->
+                <input type="text" class="search-input" value="山海寄庐艺术工作室" id="searchInput" spellcheck="false">
+                <div class="clear-btn" onclick="document.getElementById('searchInput').value=''">×</div>
+                <div class="search-icon-small">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+                </div>
+            </div>
+        </div>
+        <div class="nav-tabs">
+            <div class="nav-tab active">全部</div>
+            <div class="nav-tab">图片</div>
+            <div class="nav-tab">资讯</div>
+            <div class="nav-tab">地图</div>
+            <div class="nav-tab">更多</div>
+        </div>
+    </header>
+
+    <!-- 搜索结果区 -->
+    <div class="main-content">
+        <div class="result-stats">找到约 1,140,000 条结果 （用时 0.28 秒）</div>
+
+        <!-- 【目标结果：加密网页跳转】 -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">🎨</div>
+                <span>https://www.shjl-studio.com › index</span>
+            </div>
+            <div class="result-title" onclick="executeJump('0x73686a6c5f73747564696f2e68746d6c')">
+                <span class="kw">山海寄庐艺术工作室</span> - 官方主页
+            </div>
+            <div class="result-desc">
+                数字时代的美学重构。<span class="kw">山海寄庐</span>是由独立画师陈屿秋创立的数字艺术工坊。我们致力于通过底层算法与情感渲染，将自然界转瞬即逝的光影，定格为永恒的像素代码。欢迎鉴赏《落日沉溺》系列作品。
+            </div>
+        </div>
+        
+        <!-- 干扰项 1：工商信息查询 (揭示实体性质) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">企</div>
+                <span>https://www.qcc.com › firm</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                <span class="kw">山海寄庐</span>（江城）数字科技有限公司 - 企查查
+            </div>
+            <div class="result-desc">
+                注册资本：5000万人民币。法定代表人：保密。注册地址：江城创意科技园C座数据中心内部核心区。经营范围包括：人工智能基础资源与技术平台；超算算力租赁；全息影像技术服务等。（注：该企业无对外公开的实体办公区）
+            </div>
+        </div>
+
+        <!-- 干扰项 2：论坛探秘吐槽 (揭露风扇与雨声的真相) -->
+        <div class="result-item">
+            <div class="result-breadcrumb">
+                <div class="result-icon">知</div>
+                <span>https://www.zhihu.com › question</span>
+            </div>
+            <div class="result-title" href="javascript:void(0)">
+                有人去过江城创意园的那个“<span class="kw">山海寄庐工作室</span>”吗？ - 知乎
+            </div>
+            <div class="result-desc">
+                我之前去他们公司送过画展授权合同，结果按地址找到创意园C座顶层，发现根本不是什么文艺的画室！那一整层全是全封闭的服务器机房！冷气开得像冰窖，排风扇的声音大得像暴雨砸在铁皮屋顶上一样，根本没有活人办公，我还以为我走错了...
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * 加密跳转逻辑
+         * @param {string} token - 目标地址的十六进制代码 (以 0x 开头)
+         * 0x73686a6c5f73747564696f2e68746d6c -> shjl_studio.html
+         */
+        function executeJump(token) {
+            let destUrl = '';
+            // 去除 0x 前缀
+            let hexSequence = token.substring(2);
+            
+            // 将十六进制转回 ASCII 字符串
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substring(i, i + 2), 16));
+            }
+            
+            // 创建一个隐形的 <a> 标签来模拟点击，绕过本地浏览器的弹窗拦截
+            let link = document.createElement('a');
+            link.href = destUrl;
+            link.target = '_blank'; // 设置在新标签页打开
+            document.body.appendChild(link);
+            link.click(); // 触发点击
+            document.body.removeChild(link); // 用完即焚
+        }
+    </script>
+</body>
+</html>

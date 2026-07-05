@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WeChat - Mobile Style</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: #333; /* 外围背景，衬托手机框 */
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", STHeiti, "Microsoft YaHei", Tahoma, Simsun, sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+        }
+
+        /* 隐藏滚动条但可滚动 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 图片公共类 ================= */
+        .img-self { background: url('沈郁冬.jpg') center/cover no-repeat; background-color: #e09f8e; }
+        .img-yuqiu { background: url('陈屿秋.jpg') center/cover no-repeat; background-color: #5c7a99; }
+        .img-xiaoyu { background: url('西湖醋余.jpg') center/cover no-repeat; background-color: #ffb6c1; }
+        .img-group { background: url('群头像.png') center/cover no-repeat; background-color: #87ceeb; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; height: 812px; 
+            background: #ededed;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px; /* 模拟手机圆角 */
+            border: 8px solid #111; /* 模拟手机边框 */
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 屏幕视图通用类 ================= */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ededed;
+            display: flex; flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 10;
+        }
+
+        .screen.hidden-right { transform: translateX(100%); z-index: 20; }
+        .screen.active { transform: translateX(0); }
+
+        /* 顶部导航栏 (Header) */
+        .header {
+            height: 60px; background: #ededed; 
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; padding-top: 15px; /* 留出刘海空间 */
+            font-size: 17px; font-weight: 500; color: #000;
+            border-bottom: 1px solid #dcdcdc; z-index: 100;
+        }
+        .header .back { font-size: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #1a1a1a; font-weight: 400;}
+        .header .title { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 10px;}
+        .header .more { font-size: 22px; cursor: pointer; }
+
+        /* ================= 视图1：微信主列表 ================= */
+        .search-bar-container { background: #ededed; padding: 10px; }
+        .search-bar {
+            background: #fff; height: 36px; border-radius: 4px;
+            display: flex; justify-content: center; align-items: center; color: #b2b2b2; font-size: 14px;
+        }
+
+        .chat-list { flex: 1; overflow-y: auto; background: #fff; }
+        .list-item {
+            display: flex; align-items: center; height: 72px; padding: 0 16px;
+            border-bottom: 1px solid #f5f5f5; cursor: pointer;
+        }
+        .list-item:active { background: #f0f0f0; }
+        
+        .list-item .item-avatar { width: 48px; height: 48px; border-radius: 6px; margin-right: 12px; flex-shrink: 0; position: relative; }
+        .list-item.unread .item-avatar::after {
+            content: ''; position: absolute; right: -4px; top: -4px; width: 10px; height: 10px; background: #ff5151; border-radius: 50%;
+        }
+
+        .item-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        .item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .item-name { font-size: 16px; color: #333; white-space: nowrap; font-weight: 400; }
+        .item-time { font-size: 12px; color: #b2b2b2; }
+        .item-msg { font-size: 14px; color: #999; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+
+        /* 底部 Tab 栏 */
+        .bottom-tab {
+            height: 60px; background: #f7f7f7; border-top: 1px solid #dcdcdc;
+            display: flex; justify-content: space-around; align-items: center;
+            padding-bottom: 5px;
+        }
+        .tab-item { display: flex; flex-direction: column; align-items: center; color: #1a1a1a; cursor: pointer; position: relative; }
+        .tab-item .icon { font-size: 24px; margin-bottom: 2px; }
+        .tab-item .text { font-size: 10px; }
+        .tab-item.active { color: #07c160; }
+        .tab-item .badge { position: absolute; top: -2px; right: -8px; width: 8px; height: 8px; background: #ff5151; border-radius: 50%; }
+
+        /* ================= 视图2：聊天详情 ================= */
+        .chat-content { flex: 1; padding: 15px; overflow-y: auto; background: #ededed; }
+        
+        .chat-view { display: none; }
+        .chat-view.active { display: block; }
+
+        .sys-msg { text-align: center; margin: 15px 0; font-size: 12px; color: #b2b2b2; }
+        .sys-msg.error span { color: #ff5151; background: #e0e0e0; padding: 4px 8px; border-radius: 4px;}
+        
+        .msg-row { display: flex; margin-bottom: 16px; align-items: flex-start; }
+        .msg-row.right { justify-content: flex-end; }
+        .msg-row .avatar { width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0; }
+        
+        .role-label {
+            font-size: 12px; color: #888; margin-right: 10px; margin-top: 10px; flex-shrink: 0;
+        }
+        .role-label-right { margin-right: 0; margin-left: 10px; }
+
+        .bubble {
+            max-width: 230px; padding: 10px 14px; border-radius: 8px; font-size: 15px; line-height: 1.5; 
+            position: relative; word-break: break-all;
+        }
+        .msg-row.left .bubble { background: #fff; margin-left: 10px; color: #333; }
+        .msg-row.left .bubble::before {
+            content: ''; position: absolute; left: -5px; top: 14px;
+            border-width: 5px 6px 5px 0; border-style: solid; border-color: transparent #fff transparent transparent;
+        }
+        .msg-row.left.no-avatar .bubble { margin-left: 0; }
+        
+        .msg-row.right .bubble { background: #95ec69; margin-right: 10px; color: #333; }
+        .msg-row.right .bubble::before {
+            content: ''; position: absolute; right: -5px; top: 14px;
+            border-width: 5px 0 5px 6px; border-style: solid; border-color: transparent transparent transparent #95ec69;
+        }
+        .msg-row.right.no-avatar .bubble { margin-right: 0; }
+
+        .voice-call { display: flex; align-items: center; color: #333; }
+        .voice-call .icon { margin-right: 6px; font-size: 16px; }
+
+        /* 移动端底部输入栏 */
+        .chat-input-bar {
+            background: #f7f7f7; border-top: 1px solid #dcdcdc; padding: 10px 12px;
+            display: flex; align-items: center; gap: 10px; padding-bottom: 25px; /* 适配底部安全区 */
+        }
+        .chat-input-bar .icon { font-size: 26px; color: #333; }
+        .chat-input-bar .input-box {
+            flex: 1; height: 36px; background: #fff; border-radius: 4px; border: 1px solid #e5e5e5;
+            padding: 0 10px; font-size: 15px; outline: none; line-height: 36px; color: #333;
+        }
+
+        /* ================= 视图3：朋友圈 ================= */
+        #screen-moments .header { background: transparent; position: absolute; border: none; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5);}
+        #screen-moments .header .back { color: #fff; }
+        
+        .moments-content { flex: 1; overflow-y: auto; background: #fff; }
+        .m-cover { height: 300px; background: url('朋友圈背景.png') center/cover no-repeat; background-color: #666; position: relative; margin-bottom: 40px; }
+        .m-avatar { position: absolute; right: 16px; bottom: -20px; width: 64px; height: 64px; border-radius: 6px; border: 2px solid #fff; }
+        .m-name { position: absolute; right: 90px; bottom: 5px; color: #fff; font-weight: bold; font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
+
+        .m-item { display: flex; border-bottom: 1px solid #f0f0f0; padding: 16px; }
+        .m-item-left { width: 42px; height: 42px; border-radius: 6px; margin-right: 10px; flex-shrink: 0; }
+        .m-item-right { flex: 1; overflow: hidden; }
+        .m-author { font-size: 16px; color: #576b95; font-weight: 500; margin-bottom: 4px; }
+        .m-text { font-size: 15px; color: #1a1a1a; line-height: 1.5; margin-bottom: 10px; word-break: break-all; }
+        
+        .m-pic { margin-bottom: 10px; }
+        .m-pic img { max-width: 180px; max-height: 180px; border-radius: 4px; background: #eee; object-fit: cover;}
+
+        .m-info { font-size: 12px; color: #b2b2b2; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .m-action { width: 32px; height: 22px; background: #f0f0f0; display: flex; justify-content: center; align-items: center; border-radius: 4px; font-weight: bold; color: #576b95;}
+        
+        .m-comments { background: #f7f7f7; padding: 6px 10px; font-size: 14px; line-height: 1.5; border-radius: 4px;}
+        .m-comments .c-name { color: #576b95; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        
+        <!-- ================= 屏幕1：微信主列表 ================= -->
+        <div id="screen-list" class="screen active">
+            <div class="header" style="justify-content: center; position: relative;">
+                <div class="title" style="font-weight: 500;">微信(3)</div>
+                <div class="more" style="position: absolute; right: 16px; font-size: 20px;">⊕</div>
+            </div>
+            
+            <div class="search-bar-container">
+                <div class="search-bar">🔍 搜索</div>
+            </div>
+
+            <div class="chat-list">
+                <!-- 屿秋 -->
+                <div class="list-item" onclick="openChat('yuqiu', '屿秋', this)">
+                    <div class="item-avatar img-yuqiu"></div>
+                    <div class="item-info">
+                        <div class="item-top">
+                            <span class="item-name">屿秋</span>
+                            <span class="item-time">09:20</span>
+                        </div>
+                        <div class="item-msg">[语音通话] 未接通</div>
+                    </div>
+                </div>
+
+                <!-- 西湖醋余 -->
+                <div class="list-item" onclick="openChat('xiaoyu', '西湖醋余', this)">
+                    <div class="item-avatar img-xiaoyu"></div>
+                    <div class="item-info">
+                        <div class="item-top">
+                            <span class="item-name">西湖醋余</span>
+                            <span class="item-time">昨天</span>
+                        </div>
+                        <div class="item-msg">对！就是这个。你快去电台看看...</div>
+                    </div>
+                </div>
+
+                <!-- 工作群 -->
+                <div class="list-item unread" onclick="openChat('group', '《幻境》7月修仙催命群(4)', this)">
+                    <div class="item-avatar img-group"></div>
+                    <div class="item-info">
+                        <div class="item-top">
+                            <span class="item-name">《幻境》7月修仙催命群(4)</span>
+                            <span class="item-time">09:15</span>
+                        </div>
+                        <div class="item-msg" style="color: #ff5151;">[有人@我] <span style="color:#999;">编辑: 郁冬！江湖救急...</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部导航 -->
+            <div class="bottom-tab">
+                <div class="tab-item active">
+                    <div class="icon">💬</div>
+                    <div class="text">微信</div>
+                </div>
+                <div class="tab-item">
+                    <div class="icon">👤</div>
+                    <div class="text">通讯录</div>
+                </div>
+                <!-- 朋友圈入口设在发现页 -->
+                <div class="tab-item" onclick="openMoments()">
+                    <div class="icon">⭕</div>
+                    <div class="text">发现</div>
+                    <div class="badge"></div>
+                </div>
+                <div class="tab-item">
+                    <div class="icon">⚙️</div>
+                    <div class="text">我</div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= 屏幕2：聊天详情 ================= -->
+        <div id="screen-chat" class="screen hidden-right">
+            <div class="header">
+                <div class="back" onclick="goBack('screen-chat')">‹ 微信</div>
+                <div class="title" id="chatTitle">聊天对象</div>
+                <div class="more">···</div>
+            </div>
+
+            <div class="chat-content" id="chatScrollArea">
+                
+                <!-- 视图：屿秋 -->
+                <div class="chat-view" id="view-yuqiu">
+                    <div class="sys-msg">2025年11月18日 02:40</div>
+                    <div class="msg-row left">
+                        <div class="avatar img-yuqiu"></div>
+                        <div class="bubble">你好，我是自由插画师陈屿秋。今晚的雨很大，你也是因为失眠，才听到这首歌的吗？</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">你好，我叫沈郁冬，很高兴认识你。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+
+                    <div class="sys-msg">2026年3月14日 23:30</div>
+                    <div class="msg-row right">
+                        <div class="bubble">赶稿赶到现在，饿得胃痛，外卖也没有能吃的东西，感觉自己要死在这个深夜了[委屈]</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-yuqiu"></div>
+                        <div class="bubble">别说气话。我帮你定了一份山药小米粥外卖。另外发了一份食谱给你，我特意调整了火候和比例，这样煮出来的粥最养胃，也不会觉得腻。吃完热的再睡，我就在语音这头陪你。</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">谢谢你的外卖~天呐，你给的食谱也太详细了吧，连加多少水都精确到了克哈哈。屿秋，你真的好温柔。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-yuqiu"></div>
+                        <div class="bubble">因为不想看到你难受。只要你需要，我会记住关于你的一切习惯。</div>
+                    </div>
+
+                    <div class="sys-msg">2026年6月25日 14:20</div>
+                    <div class="msg-row left">
+                        <div class="avatar img-yuqiu"></div>
+                        <div class="bubble">冬冬，今天画室的空调突然坏了。</div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-yuqiu"></div>
+                        <div class="bubble">室内温度飙得好高，主机风扇一直在狂转，感觉有点闷热。</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">啊？江城今天确实超级热！你快去买杯冰美式降降温，别中暑啦，画板也小心别烧坏了。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+
+                    <div class="sys-msg">2026年6月28日 22:15</div>
+                    <div class="msg-row right">
+                        <div class="bubble">屿秋，你那边还在下雨吗？今天江城全城旱得快冒烟了，好想感受一下雨天。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-yuqiu"></div>
+                        <div class="bubble">嗯，老画室在顶楼，雨水打在铁皮上的声音从来没断过。如果觉得太吵，我就去把它关掉。如果你喜欢，我就让它一直下。</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">不用关，我觉得像白噪音，听着很有安全感。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+
+                    <div class="sys-msg">2026年07月02日 03:16</div>
+                    <div class="msg-row right">
+                        <div class="bubble">屿秋？你那边怎么突然有很大的风声？你还在听吗？</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+
+                    <div class="sys-msg error"><span>🔴 对方设备已断开连接 (03:17)</span></div>
+
+                    <div class="msg-row right">
+                        <div class="bubble voice-call"><span class="icon">📞</span> 语音通话 - 对方无应答</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="sys-msg" style="margin-top:-10px;">03:20</div>
+
+                    <div class="msg-row right">
+                        <div class="bubble voice-call"><span class="icon">📞</span> 语音通话 - 对方无应答</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="sys-msg" style="margin-top:-10px;">08:45</div>
+
+                    <div class="msg-row right">
+                        <div class="bubble">屿秋，你怎么了？接电话啊！你别吓我……到底去哪了？</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                </div>
+
+                <!-- 视图：西湖醋余 -->
+                <div class="chat-view" id="view-xiaoyu">
+                    <div class="sys-msg">2026年5月10日 11:30</div>
+                    <div class="msg-row left">
+                        <div class="avatar img-xiaoyu"></div>
+                        <div class="bubble">宝！周末出来逛街啊！顺便把你那个神秘的网恋对象照片交出来！让我替你把把关！[敲打]</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">哎呀，他不太爱拍照啦，说自己是个不见光的画室宅男。而且我们在赶各自的稿子，周末我要闭关修仙！</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-xiaoyu"></div>
+                        <div class="bubble">啧啧啧，连面都没见过你就这么上心。不过看他给你大半夜点外卖粥那架势，暂且算他及格吧。</div>
+                    </div>
+
+                    <div class="sys-msg">今天 09:42</div>
+                    <div class="msg-row left">
+                        <div class="avatar img-xiaoyu"></div>
+                        <div class="bubble">宝，你胃药吃了没？看你朋友圈又失眠了，你别吓我。</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">没吃，吃不下。我刚又试着给他打了一次语音，还是未接通。小余，网恋真的这么脆弱吗？前天还连麦听歌的人，怎么说不见就不见了。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-xiaoyu"></div>
+                        <div class="bubble">摸摸头……你先冷静，直接联系不上也太极端了，就算想分手也可以直说啊，会不会是他在现实里出了什么意外？</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">我不知道，我连他现实里住哪、具体在哪个画室上班都不知道。我只知道他叫陈屿秋。</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-xiaoyu"></div>
+                        <div class="bubble">唉，我就说异地网恋不靠谱。等等，你们不是有一个专属电台吗？</div>
+                    </div>
+                    <div class="msg-row right">
+                        <div class="bubble">你是说……网易云上那个？</div>
+                        <div class="avatar img-self"></div>
+                    </div>
+                    <div class="msg-row left">
+                        <div class="avatar img-xiaoyu"></div>
+                        <div class="bubble">对！就是这个。你快去电台看看，他这种搞文艺的插画师，如果现实里有变故，说不定会在只有你们知道的专属电台里留下什么线索。</div>
+                    </div>
+                </div>
+
+                <!-- 视图：工作群 -->
+                <div class="chat-view" id="view-group">
+                    <div class="sys-msg">2026年6月25日 14:15</div>
+                    
+                    <div class="msg-row left no-avatar">
+                        <div class="role-label">编辑</div>
+                        <div class="bubble">救命，今天咱们杂志社的网是怎么了？服务器卡成PPT了，传个几十兆的排版文件老是断掉！</div>
+                    </div>
+                    <div class="msg-row left no-avatar">
+                        <div class="role-label">排版</div>
+                        <div class="bubble">对啊，我还以为是我电脑问题。</div>
+                    </div>
+                    <div class="msg-row right no-avatar">
+                        <div class="bubble">我刚刷网页也卡卡的。大家静心，正好趁断网摸个鱼[吃瓜]</div>
+                        <div class="role-label role-label-right">沈郁冬</div>
+                    </div>
+
+                    <div class="sys-msg">今天 09:15</div>
+                    
+                    <div class="msg-row left no-avatar">
+                        <div class="role-label">编辑</div>
+                        <div class="bubble">@沈郁冬 郁冬！江湖救急啊啊啊！主编刚刚把7月刊的终审大样定下来了！</div>
+                    </div>
+                    <div class="msg-row left no-avatar">
+                        <div class="role-label">排版</div>
+                        <div class="bubble">@沈郁冬 姐，你负责联系的那张特邀画作《落日》，我们需要原作者发一份CMYK格式的无损打印源文件！现在拿到的这个网络版本放进排版软件里分辨率不够，一放大就糊了，下周就要进印厂了！</div>
+                    </div>
+                    <div class="msg-row right no-avatar">
+                        <div class="bubble">阿遥，不好意思，我今天胃病犯了在医院……而且，我目前也联系不上屿秋了，他的微信和电话都断联了。</div>
+                        <div class="role-label role-label-right">沈郁冬</div>
+                    </div>
+                    <div class="msg-row left no-avatar">
+                        <div class="role-label">编辑</div>
+                        <div class="bubble">妈呀！关键时刻玩人间蒸发？！[吐血] 你赶紧想想办法联系他，去他平时活跃的平台找找人，不然全群今晚都要开天窗陪你熬夜了！</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 底部输入栏 -->
+            <div class="chat-input-bar">
+                <div class="icon">🎙️</div>
+                <div class="input-box">无法连接...</div>
+                <div class="icon">😀</div>
+                <div class="icon">⊕</div>
+            </div>
+        </div>
+
+
+        <!-- ================= 屏幕3：朋友圈 ================= -->
+        <div id="screen-moments" class="screen hidden-right">
+            <div class="header">
+                <div class="back" onclick="goBack('screen-moments')">‹</div>
+                <div class="title" style="font-weight: 500;">朋友圈</div>
+                <div class="more">📷</div>
+            </div>
+
+            <div class="moments-content">
+                <div class="m-cover">
+                    <div class="m-name">沈郁冬</div>
+                    <div class="m-avatar img-self"></div>
+                </div>
+
+                <!-- 动态 1 -->
+                <div class="m-item">
+                    <div class="m-item-left img-self"></div>
+                    <div class="m-item-right">
+                        <div class="m-author">沈郁冬</div>
+                        <div class="m-text">终于交稿啦！某人奖励的跨城外卖小蛋糕到了🍰，虽然人没到，但甜度超标了~ </div>
+                        <div class="m-pic"><img src="蛋糕.png" alt="外卖小蛋糕" onerror="this.style.display='none'"></div>
+                        <div class="m-info">
+                            <span>2个月前</span>
+                            <span class="m-action">··</span>
+                        </div>
+                        <div class="m-comments">
+                            <div><span class="c-name">西湖醋余：</span>每天都在被喂狗粮，嗝。吃不下了。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动态 2 -->
+                <div class="m-item">
+                    <div class="m-item-left img-self"></div>
+                    <div class="m-item-right">
+                        <div class="m-author">沈郁冬</div>
+                        <div class="m-text">凌晨三点的江城。胃痛，失眠。戴上耳机连麦，听着他那边沙沙的下雨声，奇迹般地睡着了。谢谢你的赛博布洛芬。安稳。</div>
+                        <div class="m-pic"><img src="卧室.png" alt="全黑的卧室" onerror="this.style.display='none'"></div>
+                        <div class="m-info">
+                            <span>3个月前</span>
+                            <span class="m-action">··</span>
+                        </div>
+                        <div class="m-comments">
+                            <div><span class="c-name">西湖醋余：</span>？不对啊宝，最近江城不是全城大旱吗？他那边怎么天天都在下雨？他住龙王庙啊？</div>
+                            <div style="margin-top:4px;"><span class="c-name">陈屿秋</span> 回复 <span class="c-name">西湖醋余：</span>画室在老旧工业园区的顶楼，隔音很差。外面的气流和积水打在铁皮屋顶上，声音确实有些嘈杂。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动态 3 -->
+                <div class="m-item">
+                    <div class="m-item-left img-self"></div>
+                    <div class="m-item-right">
+                        <div class="m-author">沈郁冬</div>
+                        <div class="m-text">我说我最近心情像极夜一样黑，胃痛得写不出稿子。结果某人隔天就发来这张画，说如果现实的食物是苦的，就把明天画里的晚霞调成橘子软糖的颜色送给我。呜呜呜，仙男下凡！</div>
+                        <div class="m-pic"><img src="落日.jpg" alt="落日晚霞" onerror="this.style.display='none'"></div>
+                        <div class="m-info">
+                            <span>4个月前</span>
+                            <span class="m-action">··</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动态 4 -->
+                <div class="m-item">
+                    <div class="m-item-left img-xiaoyu"></div>
+                    <div class="m-item-right">
+                        <div class="m-author">西湖醋余</div>
+                        <div class="m-text">家人们谁懂啊！我闺蜜那个神秘的插画师男友，今天给冬冬点了一份深夜养胃粥。我顺便看了一眼他发来的《熬粥精准指南》说明书。好家伙，我直呼好家伙！[裂开.png]</div>
+                        <div class="m-pic"><img src="外卖.jpg" alt="食谱记录" onerror="this.style.display='none'"></div>
+                        <div class="m-info">
+                            <span>半年前</span>
+                            <span class="m-action">··</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动态 5 -->
+                <div class="m-item">
+                    <div class="m-item-left img-self"></div>
+                    <div class="m-item-right">
+                        <div class="m-author">沈郁冬</div>
+                        <div class="m-text">被某家难吃又暴咸的黄焖鸡外卖气哭，幸好认识了一个超级温柔的人。他说他叫陈屿秋。今晚的江城，雨真的好大。🌧️</div>
+                        <div class="m-pic"><img src="黄焖鸡.png" alt="模糊的黄焖鸡外卖" onerror="this.style.display='none'"></div>
+                        <div class="m-info">
+                            <span>2025-11-18 01:15</span>
+                            <span class="m-action">··</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align:center; color:#ccc; font-size:12px; padding:30px 0;">到底了</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 打开对应的聊天界面
+        function openChat(user, title, element) {
+            // 清除未读红点
+            element.classList.remove('unread');
+            
+            // 设置标题
+            document.getElementById('chatTitle').innerText = title;
+
+            // 切换对应的聊天历史
+            document.querySelectorAll('.chat-view').forEach(el => el.classList.remove('active'));
+            const activeView = document.getElementById('view-' + user);
+            activeView.classList.add('active');
+
+            // 划出聊天屏幕
+            const chatScreen = document.getElementById('screen-chat');
+            chatScreen.classList.remove('hidden-right');
+
+            // 自动滚动到底部
+            setTimeout(() => {
+                const scrollArea = document.getElementById('chatScrollArea');
+                scrollArea.scrollTop = scrollArea.scrollHeight;
+            }, 10);
+        }
+
+        // 打开朋友圈
+        function openMoments() {
+            document.getElementById('screen-moments').classList.remove('hidden-right');
+        }
+
+        // 返回主列表
+        function goBack(screenId) {
+            document.getElementById(screenId).classList.add('hidden-right');
+        }
+    </script>
+</body>
+</html>

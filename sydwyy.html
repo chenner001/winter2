@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>极夜 - 网易云音乐</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: #333; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+        }
+        ul { list-style: none; }
+
+        /* 隐藏全局滚动条 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; 
+            height: 812px; 
+            background: #111; /* 网易云深色主题底色 */
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px;
+            border: 8px solid #000;
+            display: flex;
+            flex-direction: column;
+            color: #d0d0d0;
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 顶部悬浮导航 ================= */
+        .top-nav {
+            position: absolute; top: 0; left: 0; width: 100%;
+            height: 60px; padding: 10px 16px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 20;
+        }
+        .nav-btn { font-size: 24px; color: #fff; cursor: pointer; text-shadow: 0 1px 3px rgba(0,0,0,0.5);}
+
+        /* ================= 滚动内容区 ================= */
+        .scroll-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+
+        /* 顶部背景墙 */
+        .header-bg {
+            position: relative;
+            width: 100%; height: 280px;
+            background-image: url('网易云.png');
+            background-size: cover;
+            background-position: center;
+            /* 自己视角背景通常较亮，没有重度模糊 */
+            filter: brightness(0.85); 
+            z-index: 1;
+        }
+
+        /* ================= 个人信息卡片 (上滑覆盖设计) ================= */
+        .profile-card {
+            position: relative;
+            z-index: 5;
+            background: #151515;
+            min-height: 500px;
+            margin-top: -40px; /* 核心：向上偏移覆盖背景 */
+            border-radius: 20px 20px 0 0;
+            padding: 0 16px 30px;
+        }
+
+        /* 头像与操作按钮行 */
+        .avatar-row {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-top: -35px; /* 头像突出卡片 */
+            margin-bottom: 12px;
+        }
+        .avatar {
+            width: 76px; height: 76px; border-radius: 50%;
+            background: #333 url('沈郁冬.jpg') center/cover no-repeat;
+            border: 3px solid #151515;
+        }
+        .action-btns {
+            display: flex; gap: 8px; margin-bottom: 8px;
+        }
+        /* 自己的主页显示：编辑资料 */
+        .btn-edit {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 6px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: 500; cursor: pointer;
+        }
+
+        /* 用户名与基本信息 */
+        .user-name { font-size: 20px; color: #fff; font-weight: bold; margin-bottom: 8px;}
+        
+        .user-meta { display: flex; gap: 16px; font-size: 13px; color: #888; margin-bottom: 12px;}
+        .user-meta span { display: flex; gap: 4px; }
+        .meta-num { color: #fff; font-weight: 500; }
+
+        .auth-tag { 
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 11px; color: #ccc; margin-bottom: 12px;
+        }
+        .auth-icon { background: #ff3a3a; color: #fff; font-weight: bold; padding: 1px 4px; border-radius: 2px; font-size: 9px;}
+
+        /* 标签与签名 */
+        .tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;}
+        .tag { 
+            background: rgba(255,255,255,0.05); color: #aaa; font-size: 11px; 
+            padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
+        }
+        .tag.special { color: #58a6ff; border-color: rgba(88,166,255,0.3); background: rgba(88,166,255,0.1); }
+
+        .signature { font-size: 13px; color: #999; line-height: 1.5; margin-bottom: 20px; }
+
+        /* ================= 模块通用样式 ================= */
+        .section-block {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 15px;
+        }
+        .section-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 16px;
+        }
+        .section-title { font-size: 16px; font-weight: bold; color: #fff; }
+        .section-sub { font-size: 12px; color: #888; }
+
+        /* ================= 听歌排行 ================= */
+        .track-item { display: flex; align-items: center; margin-bottom: 16px; }
+        .track-item:last-child { margin-bottom: 0; }
+        
+        .track-cover { width: 44px; height: 44px; border-radius: 6px; background: #333; margin-right: 12px; overflow: hidden; flex-shrink: 0;}
+        .track-cover img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .track-info { flex: 1; overflow: hidden; }
+        .track-name { font-size: 14px; color: #e0e0e0; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .track-artist { font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        
+        /* 播放次数条 */
+        .playcount-bar-wrapper { margin-top: 6px; width: 100%; height: 4px; background: #222; border-radius: 2px; overflow: hidden;}
+        .playcount-fill { height: 100%; background: #ff3a3a; border-radius: 2px;}
+
+        /* ================= 歌单列表 ================= */
+        .playlist-item { display: flex; align-items: center; gap: 12px; margin-bottom: 15px;}
+        .playlist-item:last-child { margin-bottom: 0;}
+        
+        .pl-cover {
+            width: 54px; height: 54px; border-radius: 6px; overflow: hidden;
+            flex-shrink: 0; position: relative; background: #222;
+        }
+        .pl-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .private-icon { position: absolute; top: 4px; right: 4px; font-size: 10px; background: rgba(0,0,0,0.6); padding: 2px 4px; border-radius: 4px; color: #fff;}
+        
+        .pl-info { flex: 1; }
+        .pl-title { font-size: 14px; color: #e0e0e0; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;}
+        .pl-meta { font-size: 11px; color: #888; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        
+        <!-- 移动端吸顶导航 -->
+        <div class="top-nav">
+            <div class="nav-btn" onclick="history.back()">‹</div>
+            <div class="nav-btn" style="font-size: 20px;">⍈</div>
+        </div>
+
+        <div class="scroll-content">
+            <!-- 顶部背景图 -->
+            <div class="header-bg"></div>
+
+            <!-- 个人主页卡片 -->
+            <div class="profile-card">
+                
+                <!-- 头像与编辑资料按钮 -->
+                <div class="avatar-row">
+                    <div class="avatar"></div>
+                    <div class="action-btns">
+                        <button class="btn-edit">更换背景</button>
+                        <button class="btn-edit">编辑资料</button>
+                    </div>
+                </div>
+
+                <!-- 个人基础信息 -->
+                <div class="user-name">极夜</div>
+                
+                <div class="user-meta">
+                    <span><span class="meta-num">24</span> 关注</span>
+                    <span><span class="meta-num">305</span> 粉丝</span>
+                    <span><span class="meta-num">Lv.9</span> 等级</span>
+                </div>
+
+                <div class="auth-tag">
+                    <span class="auth-icon">P</span> 音乐达人 / 资深听众
+                </div>
+
+                <div class="tags-row">
+                    <span class="tag special" title="与屿秋的专属连接">#极夜回声</span>
+                    <span class="tag">#熬夜赶稿</span>
+                    <span class="tag">#纯音乐控</span>
+                    <span class="tag">#老二次元</span>
+                </div>
+
+                <div class="signature">
+                    文字工作者 / 长期失眠阵线联盟。<br>喜欢在夜里收集好听的声音，相信光总会穿透极夜。
+                </div>
+
+                <!-- 听歌排行模块 -->
+                <div class="section-block">
+                    <div class="section-header">
+                        <div class="section-title">听歌排行</div>
+                        <div class="section-sub">累积听歌 12,408 首</div>
+                    </div>
+                    
+                    <div class="track-list">
+                        <!-- Top 1 男主私密音频 -->
+                        <div class="track-item">
+                            <div class="track-cover"><div style="width:100%;height:100%;background:linear-gradient(135deg, #444, #111);"></div></div>
+                            <div class="track-info">
+                                <div class="track-name">第一次连麦时的语音备份 (2025.11.18)</div>
+                                <div class="track-artist">屿秋 (电台节目)</div>
+                                <div class="playcount-bar-wrapper"><div class="playcount-fill" style="width: 100%;"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Top 2 男主节目 -->
+                        <div class="track-item">
+                            <div class="track-cover"><div style="width:100%;height:100%;background:linear-gradient(135deg, #3a405a, #99b2dd);"></div></div>
+                            <div class="track-info">
+                                <div class="track-name">平安夜：深夜画室暴雨声（助眠）</div>
+                                <div class="track-artist">屿秋 (电台节目)</div>
+                                <div class="playcount-bar-wrapper"><div class="playcount-fill" style="width: 85%;"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Top 3 -->
+                        <div class="track-item">
+                            <div class="track-cover"><div style="width:100%;height:100%;background:linear-gradient(135deg, #1f1c2c, #928dab);"></div></div>
+                            <div class="track-info">
+                                <div class="track-name">Merry Christmas Mr. Lawrence</div>
+                                <div class="track-artist">Ryuichi Sakamoto</div>
+                                <div class="playcount-bar-wrapper"><div class="playcount-fill" style="width: 60%;"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Top 4 -->
+                        <div class="track-item">
+                            <div class="track-cover"><div style="width:100%;height:100%;background:linear-gradient(135deg, #8e9eab, #eef2f3);"></div></div>
+                            <div class="track-info">
+                                <div class="track-name">Komorebi (木漏れ日)</div>
+                                <div class="track-artist">m-taku</div>
+                                <div class="playcount-bar-wrapper"><div class="playcount-fill" style="width: 45%; background: #666;"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Top 5 -->
+                        <div class="track-item">
+                            <div class="track-cover"><div style="width:100%;height:100%;background:linear-gradient(135deg, #4b6cb7, #182848);"></div></div>
+                            <div class="track-info">
+                                <div class="track-name">Nocturne op.9 No.2</div>
+                                <div class="track-artist">Chopin</div>
+                                <div class="playcount-bar-wrapper"><div class="playcount-fill" style="width: 30%; background: #666;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 歌单模块 -->
+                <div class="section-block">
+                    <div class="section-header">
+                        <div class="section-title">创建的歌单 (4)</div>
+                    </div>
+                    
+                    <div class="playlist-list">
+                        
+                        <div class="playlist-item">
+                            <div class="pl-cover">
+                                <div style="width:100%; height:100%; background: linear-gradient(135deg, #1f4037 0%, #99f2c8 100%);"></div>
+                            </div>
+                            <div class="pl-info">
+                                <div class="pl-title">深夜咖啡馆：赶稿专用提神BGM</div>
+                                <div class="pl-meta">32首，播放 1,204 次</div>
+                            </div>
+                        </div>
+
+                        <div class="playlist-item">
+                            <div class="pl-cover">
+                                <div style="width:100%; height:100%; background: linear-gradient(135deg, #232526 0%, #414345 100%);"></div>
+                            </div>
+                            <div class="pl-info">
+                                <div class="pl-title">胃痛退散！听了能让人安静的纯音</div>
+                                <div class="pl-meta">18首，播放 895 次</div>
+                            </div>
+                        </div>
+
+                        <div class="playlist-item">
+                            <div class="pl-cover">
+                                <div style="width:100%; height:100%; background: linear-gradient(135deg, #e65c00 0%, #F9D423 100%);"></div>
+                            </div>
+                            <div class="pl-info">
+                                <div class="pl-title">我爱的那些动漫神级OP/ED</div>
+                                <div class="pl-meta">45首，播放 320 次</div>
+                            </div>
+                        </div>
+
+                        <div class="playlist-item">
+                            <div class="pl-cover">
+                                <div class="private-icon">🔒</div>
+                                <div style="width:100%; height:100%; background: linear-gradient(135deg, #5C258D 0%, #4389A2 100%);"></div>
+                            </div>
+                            <div class="pl-info">
+                                <div class="pl-title">【专属信箱】只有风和星星知道的秘密</div>
+                                <div class="pl-meta">1首，仅自己可见</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
