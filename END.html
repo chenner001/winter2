@@ -15,33 +15,13 @@
             overscroll-behavior: none; 
         }
 
-        /* ================= 视频全屏自适应 ================= */
-        #matrixVideo {
+        /* ================= 背景图片全屏自适应 ================= */
+        #matrixImage {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             width: 100vw; height: 100vh;
-            object-fit: cover; /* 保证视频铺满手机屏幕 */
+            object-fit: cover; /* 保证图片铺满手机屏幕 */
             display: block; transition: opacity 2s ease; z-index: 1;
-        }
-
-        /* ================= 启动按钮 ================= */
-        #play-btn {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 30px;
-            background: rgba(0, 255, 65, 0.05);
-            color: #00FF41;
-            border: 1px solid rgba(0, 255, 65, 0.5);
-            font-size: 18px; letter-spacing: 2px;
-            cursor: pointer; z-index: 20;
-            transition: all 0.5s ease; display: none; border-radius: 0;
-            text-align: center; width: 85%; max-width: 320px;
-            /* 防止移动端长按选中 */
-            user-select: none; -webkit-user-select: none;
-        }
-        #play-btn:active, #play-btn:hover {
-            background: rgba(0, 255, 65, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
         }
 
         /* ================= 终端输入界面层 ================= */
@@ -162,7 +142,7 @@
             .prompt-text { font-size: 13px; margin-bottom: 20px; padding-left: 10px;}
             #help-output { font-size: 11px; padding: 10px; margin-bottom: 15px;}
             
-            .cmd-prompt { display: none; /* 手机屏幕小，隐藏前缀 root@aletheia:~# 节省空间 */ }
+            .cmd-prompt { display: none; /* 手机屏幕小，隐藏前缀节省空间 */ }
             #cmd-input { font-size: 14px; }
             
             #dropdown-menu li { padding: 12px 10px; flex-direction: column; align-items: flex-start; gap: 4px;}
@@ -173,13 +153,8 @@
 </head>
 <body>
 
-    <!-- 背景视频 (增加 webkit-playsinline 和 autoplay 适配移动端) -->
-    <video id="matrixVideo" autoplay muted playsinline webkit-playsinline x5-playsinline>
-        <source src="04d4d0d0e0a3275161c47e25decdbd5f.mp4" type="video/mp4">
-    </video>
-
-    <!-- 交互按钮 -->
-    <button id="play-btn">[ ESTABLISH_CONNECTION ]</button>
+    <!-- 替换为指定的背景图片 -->
+    <img id="matrixImage" src="51d4bced-3283-4a08-bfa8-34a37acab75e.png" alt="Matrix Hand">
 
     <!-- 终端输入界面 -->
     <div id="terminal-overlay">
@@ -211,7 +186,6 @@
                     <input type="text" id="cmd-input" placeholder="TAP TO ENTER COMMAND..." autocomplete="off" spellcheck="false">
                     
                     <ul id="dropdown-menu">
-                        <!-- 使用 pointerdown 兼容手机触摸，防止触发失焦 -->
                         <li data-action="format" class="opt-danger">
                             <span class="opt-cmd">FORMAT_ALL</span>
                             <span class="opt-desc">// 完全格式化 (Purge System)</span>
@@ -231,8 +205,7 @@
     </div>
 
     <script>
-        const video = document.getElementById('matrixVideo');
-        const playBtn = document.getElementById('play-btn');
+        const matrixImage = document.getElementById('matrixImage');
         const terminalOverlay = document.getElementById('terminal-overlay');
         const inputWrapper = document.getElementById('inputWrapper');
         const cmdInput = document.getElementById('cmd-input');
@@ -255,50 +228,15 @@
 
         // 统一展示终端的函数
         function enterTerminal() {
-            video.pause();
-            video.style.opacity = '0.15'; // 背景变暗，透出赛博质感
-            playBtn.style.display = 'none';
+            matrixImage.style.opacity = '0.15'; // 背景变暗，透出赛博质感
             terminalOverlay.classList.add('active');
         }
 
-        // --- 视频与降级逻辑 ---
-        
-        // 如果视频加载报错（例如手机不支持该格式或无网络），直接跳出按钮
-        video.addEventListener('error', () => {
-            playBtn.style.display = 'block';
-        });
-
-        // 尝试自动播放
-        let playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                playBtn.style.display = 'none';
-            }).catch(error => {
-                // 移动端由于策略阻止了自动播放，显示按钮让用户手动触发
-                playBtn.style.display = 'block';
-            });
-        }
-
-        // 手动点击按钮
-        playBtn.addEventListener('click', () => {
-            let p = video.play();
-            if (p !== undefined) {
-                p.then(() => {
-                    playBtn.style.opacity = '0';
-                    setTimeout(() => playBtn.style.display = 'none', 500);
-                }).catch(e => {
-                    // 【降级机制】如果点了按钮手机还是死活不播，直接跳过视频进入终端，防止卡死
-                    enterTerminal();
-                });
-            } else {
-                // 极其老旧的浏览器降级
+        // --- 核心改动：3秒后自动弹窗 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
                 enterTerminal();
-            }
-        });
-
-        // 视频正常播放结束，切出终端界面
-        video.addEventListener('ended', () => {
-            enterTerminal();
+            }, 3000);
         });
 
         // --- 终端交互逻辑 ---
