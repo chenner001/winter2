@@ -103,23 +103,28 @@
         .secret-data {
             margin-top: 15px;
             font-family: monospace;
-            padding: 10px; /* 增加移动端触控面积 */
+            padding: 15px 10px; /* 增加移动端触控面积 */
             
-            /* 核心：文字颜色设置透明，但在手机上必须允许用户长按选中 */
-            color: transparent; 
+            /* 【核心修复】：手机端 color: transparent 选中后经常无法变色。
+               改为与父容器背景色一模一样的颜色，实现完美视觉隐身 */
+            color: #1a1a24;
+            -webkit-text-fill-color: #1a1a24; 
+            
             user-select: text;
             -webkit-user-select: text; /* Safari/iOS 允许选中文本 */
             
-            /* 在手机上，如果完全没有内容提示，用户不知道长按哪里，
-               所以我们给一个极浅极浅的底色框作为“擦除条”的暗示 */
+            /* 在手机上，我们给一个极浅极浅的底色框作为“擦除条”的暗示 */
             background: rgba(255,255,255,0.02);
             border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.8;
         }
 
         /* 选中状态：暗文显现 (兼容移动端长按选中) */
         .secret-data::selection, .secret-data *::selection {
             background: #ff5555;
             color: #000;
+            -webkit-text-fill-color: #000; /* 强制 iOS 选中后变色 */
             text-shadow: none;
         }
         .secret-data::-moz-selection, .secret-data *::-moz-selection {
@@ -180,7 +185,10 @@
                 <div class="dev-notes-title">内部开发者备忘 (Internal Dev Notes) - 阅后即焚</div>
                 <p class="comment-text">// @张工：因为刚加了权限校验，外包运维团队那边抱怨说新版本的鉴权 API 老是调不通，没法测试机房的网段扫描。</p>
                 <p class="comment-text">// 没办法，为了不卡周五的进度，我先在前端验证逻辑里写死了一套硬编码的后门，给他们临时提权用。下周一发 v4.0.1 补丁的时候我再删掉！！！</p>
-                <p class="comment-text" style="font-size: 11px; opacity: 0.6; margin-top: 15px;"></p>
+                
+                <p class="comment-text" style="font-size: 11px; opacity: 0.6; margin-top: 15px; text-align: center;">
+                    ( 长按下方微亮方块，滑动选中以显影 )
+                </p>
                 
                 <!-- 空白占位符，由 JS 注入解密后的数据 -->
                 <div class="secret-data" id="classifiedVault"></div>
