@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Echo - 专属信号接收站</title>
+    <style>
+        /* 亮色治愈系风格重置 */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif; }
+        body { 
+            background: #FDFBF7; /* 温暖的米白色背景 */
+            color: #5C554B;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(#E8E3D9 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* ----- 状态 1：密码解锁屏 ----- */
+        .lock-screen {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(168, 159, 145, 0.15);
+            text-align: center;
+            width: 380px;
+            transition: opacity 0.5s, transform 0.5s;
+            border: 1px solid #F0ECE4;
+        }
+        .lock-icon { font-size: 40px; margin-bottom: 20px; color: #D4C9B8; }
+        .lock-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #736859; }
+        .lock-subtitle { font-size: 13px; color: #9A9080; margin-bottom: 30px; letter-spacing: 1px; }
+        
+        .pin-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 10px;
+            border: 2px solid #E8E3D9;
+            border-radius: 10px;
+            background: #FAFAF8;
+            color: #5C554B;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .pin-input:focus { border-color: #B5C6A9; box-shadow: 0 0 10px rgba(181, 198, 169, 0.3); }
+        .pin-input::placeholder { letter-spacing: 2px; font-size: 14px; color: #CCC; }
+        
+        .error-msg { color: #E07A5F; font-size: 12px; height: 18px; margin-top: 15px; opacity: 0; transition: opacity 0.3s; }
+
+        /* ----- 状态 2：私密聊天空间 ----- */
+        .chat-space {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            height: 90vh;
+            background: #FFF;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(168, 159, 145, 0.2);
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #F0ECE4;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .chat-space.active { opacity: 1; transform: translateY(0); }
+
+        /* 聊天头部 */
+        .chat-header {
+            background: #FAFAF8;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #F0ECE4;
+            position: relative;
+        }
+        .chat-title { font-size: 16px; font-weight: bold; color: #5C554B; }
+        .chat-status { font-size: 12px; color: #B5C6A9; margin-top: 5px; }
+        .chat-status::before { content: '●'; margin-right: 4px; }
+
+        /* 聊天记录区 */
+        .chat-history {
+            flex: 1;
+            padding: 25px 20px;
+            overflow-y: auto;
+            background: #FCFCFA;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .chat-history::-webkit-scrollbar { width: 6px; }
+        .chat-history::-webkit-scrollbar-thumb { background: #E8E3D9; border-radius: 3px; }
+
+        /* 气泡通用样式 */
+        .message { display: flex; align-items: flex-end; gap: 10px; max-width: 85%; }
+        .msg-avatar { width: 36px; height: 36px; border-radius: 50%; background-size: cover; flex-shrink: 0; }
+        .msg-bubble { padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; position: relative; }
+        .msg-time { font-size: 11px; color: #C2BAB0; text-align: center; margin: 10px 0; width: 100%; }
+        
+        /* 对方 (男主 屿秋) - 左侧 */
+        .message.incoming { align-self: flex-start; }
+        .message.incoming .msg-avatar { background-image: url('陈屿秋.jpg'); background-color: #D4C9B8; }
+        .message.incoming .msg-bubble { background: #F2EFE9; color: #5C554B; border-bottom-left-radius: 4px; }
+
+        /* 自己 (女主 极夜) - 右侧 */
+        .message.outgoing { align-self: flex-end; flex-direction: row-reverse; }
+        .message.outgoing .msg-avatar { background-image: url('沈郁冬.jpg'); background-color: #B5C6A9; }
+        .message.outgoing .msg-bubble { background: #B5C6A9; color: #FFF; border-bottom-right-radius: 4px; }
+
+        /* 底部输入框 (仅展示) */
+        .chat-input-area {
+            padding: 15px 20px;
+            background: #FFF;
+            border-top: 1px solid #F0ECE4;
+            display: flex;
+            gap: 10px;
+        }
+        .input-mock { flex: 1; background: #F5F3EF; border-radius: 20px; padding: 10px 15px; font-size: 13px; color: #9A9080; display: flex; align-items: center; }
+        .send-btn-mock { background: #B5C6A9; color: #FFF; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 解锁屏幕 -->
+    <div class="lock-screen" id="lockScreen">
+        <div class="lock-icon">✉️</div>
+        <div class="lock-title">在极光与极夜之间，有一片属于只我们的世界——专属信号接收站</div>
+        <div class="lock-subtitle"> 请输入我们相识的日期 </div>
+        <input type="password" class="pin-input" id="pinInput" maxlength="8" placeholder="YYYYMMDD" autocomplete="off">
+        <div class="error-msg" id="errorMsg">密码不对哦，再想想是哪一天？</div>
+    </div>
+
+    <!-- 内部聊天空间 -->
+    <div class="chat-space" id="chatSpace">
+        <div class="chat-header">
+            <div class="chat-title">极夜 ✧ 屿秋</div>
+            <div class="chat-status">信号已建立 - 距离: 0km</div>
+        </div>
+        
+        <div class="chat-history">
+            <div class="msg-time">2026年5月10日 23:15</div>
+
+            <div class="message outgoing">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">救命，我的胃又要罢工了。江城那个“浮空之境”新媒体艺术展的宣发稿，我憋了整整三天，删了三天。</div>
+            </div>
+
+            <div class="message outgoing">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">甲方要那种“赛博朋克与自然交织的极致浪漫”，要求写出“视觉神经的极限冲击”……我连个毛都写不出来。早知道不接这个活了😭</div>
+            </div>
+
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">摸摸头。先去用微波炉热一杯牛奶，乖。</div>
+            </div>
+
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">别和自己死磕，甲方要的那些大词都是虚的，你只要写你最真实的感受就好了。</div>
+            </div>
+
+            <div class="message outgoing">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">可是我没见过极光，也没见过完美的晚霞啊。真羡慕你们画师，一笔一划都能自己掌控。对了，你最近神秘兮兮的，老是熬夜，在忙什么大项目？</div>
+            </div>
+
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">偷偷告诉你一个秘密。</div>
+            </div>
+
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">其实，我也报名参加了你说的这个“江城浮空展”。</div>
+            </div>
+
+            <div class="message outgoing">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">！！！真的假的？！你要参展？</div>
+            </div>
+
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">嗯。投了一组全息投影画作，主打的那张叫《落日沉溺》。</div>
+            </div>
+
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">所以，沈大作家，不要发愁了。四舍五入一下，我们现在是在同一个项目里并肩作战。<br><br>我会把最完美的晚霞用画笔渲出来给你看。到时候你去展厅，只要看着我的画写就好了。</div>
+            </div>
+
+            <div class="message outgoing">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">屿秋，你真好。那我等你交稿！我现在去热牛奶啦~</div>
+            </div>
+            
+            <div class="msg-time">2026年5月10日 23:42</div>
+            <div class="message incoming">
+                <div class="msg-avatar"></div>
+                <div class="msg-bubble">好，晚安，极夜。</div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="input-mock">历史记录已归档，当前连接已断开...</div>
+            <div class="send-btn-mock">↑</div>
+        </div>
+    </div>
+
+    <!-- 加密校验脚本 -->
+    <script>
+        const pinInput = document.getElementById('pinInput');
+        const lockScreen = document.getElementById('lockScreen');
+        const chatSpace = document.getElementById('chatSpace');
+        const errorMsg = document.getElementById('errorMsg');
+
+        pinInput.addEventListener('input', function(e) {
+            const val = e.target.value;
+            // 当输入达到8位数时自动校验
+            if (val.length === 8) {
+                // 
+                // 
+                if (btoa(val) === 'MjAyNTExMTg=') {
+                    // 密码正确：隐藏解锁屏，显示聊天区
+                    errorMsg.style.opacity = '0';
+                    pinInput.disabled = true;
+                    
+                    lockScreen.style.transform = 'scale(0.9)';
+                    lockScreen.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        lockScreen.style.display = 'none';
+                        chatSpace.style.display = 'flex';
+                        // 触发一点重绘延迟以激活过渡动画
+                        setTimeout(() => {
+                            chatSpace.classList.add('active');
+                        }, 50);
+                    }, 500);
+
+                } else {
+                    // 密码错误，执行震动并清空
+                    errorMsg.style.opacity = '1';
+                    
+                    // 左右震动效果
+                    lockScreen.style.transform = 'translateX(-10px)';
+                    setTimeout(() => lockScreen.style.transform = 'translateX(10px)', 100);
+                    setTimeout(() => lockScreen.style.transform = 'translateX(-10px)', 200);
+                    setTimeout(() => lockScreen.style.transform = 'translateX(0)', 300);
+                    
+                    // 延迟清空输入框，让玩家重新输入
+                    setTimeout(() => {
+                        pinInput.value = '';
+                    }, 600);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM LOCKDOWN - ALETHEIA</title>
+    <style>
+        /* 终端警报风格 */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Courier New', Courier, 'PingFang SC', monospace; }
+        body { 
+            background-color: #050000; 
+            color: #ff5555; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 扫描线动画遮罩 */
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, transparent 50%, rgba(255, 85, 85, 0.05) 51%);
+            background-size: 100% 4px; pointer-events: none; z-index: 999;
+        }
+
+        /* 屏幕边缘暗化与血红色呼吸晕影 */
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.15);
+            animation: pulseBg 4s infinite alternate;
+            pointer-events: none; z-index: 998;
+        }
+        @keyframes pulseBg { 0% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.1); } 100% { box-shadow: inset 0 0 150px rgba(255, 0, 0, 0.3); } }
+
+        /* 主容器 */
+        .lockdown-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(20, 0, 0, 0.8);
+            border: 1px solid #ff5555;
+            box-shadow: 0 0 30px rgba(255, 85, 85, 0.2), inset 0 0 20px rgba(255, 85, 85, 0.1);
+            padding: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* 故障抖动特效 */
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+            40%, 60% { transform: translate3d(8px, 0, 0); }
+        }
+
+        /* 头部警告 */
+        .header-warning {
+            text-align: center; margin-bottom: 30px; border-bottom: 1px dashed #ff5555; padding-bottom: 20px;
+        }
+        .warning-title { font-size: 22px; font-weight: bold; letter-spacing: 2px; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,0,0,0.8); animation: glitch 2s infinite; }
+        .warning-sub { font-size: 13px; color: #ffb86c; }
+
+        @keyframes glitch {
+            0% { text-shadow: 2px 0 0 red, -2px 0 0 blue; }
+            5% { text-shadow: -2px 0 0 red, 2px 0 0 blue; }
+            10% { text-shadow: 2px 0 0 red, -2px 0 0 blue; }
+            15% { text-shadow: none; }
+            100% { text-shadow: none; }
+        }
+
+        /* 问答区域 */
+        .qa-section { display: none; }
+        .qa-section.active { display: block; animation: fadeIn 0.5s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .progress { font-size: 12px; color: #6272a4; margin-bottom: 15px; letter-spacing: 1px;}
+        .question { font-size: 16px; color: #f8f8f2; line-height: 1.6; margin-bottom: 30px; font-weight: bold;}
+
+        /* 选项按钮 */
+        .option-btn {
+            display: block; width: 100%; background: rgba(255, 85, 85, 0.05);
+            border: 1px solid rgba(255, 85, 85, 0.4); color: #e0e0e0; padding: 15px 20px;
+            margin-bottom: 15px; text-align: left; font-size: 14px; cursor: pointer;
+            transition: all 0.2s; position: relative;
+        }
+        .option-btn:hover { background: rgba(255, 85, 85, 0.2); border-color: #ff5555; color: #fff; padding-left: 25px;}
+        .option-btn::before { content: ">"; position: absolute; left: 10px; opacity: 0; transition: opacity 0.2s; color: #ff5555; font-weight: bold;}
+        .option-btn:hover::before { opacity: 1; }
+
+        /* 错误全屏提示框 */
+        .error-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,0,0,0.9);
+            z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: opacity 0.1s;
+        }
+        .error-overlay.show { opacity: 1; pointer-events: auto; }
+        .error-msg { color: #fff; font-size: 40px; font-weight: bold; letter-spacing: 5px; text-shadow: 4px 4px 0 #000; margin-bottom: 20px;}
+        .error-sub { color: #000; font-size: 18px; font-weight: bold; background: #fff; padding: 5px 15px; }
+
+        /* 成功全屏提示框 */
+        .success-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000;
+            z-index: 2000; display: flex; justify-content: center; align-items: center; flex-direction: column;
+            opacity: 0; pointer-events: none; transition: opacity 1s;
+        }
+        .success-overlay.show { opacity: 1; pointer-events: auto; }
+        .success-msg { color: #50fa7b; font-size: 24px; letter-spacing: 2px; margin-bottom: 10px; text-shadow: 0 0 10px rgba(80,250,123,0.5);}
+        
+    </style>
+</head>
+<body>
+
+    <!-- 错误惩罚弹窗 -->
+    <div class="error-overlay" id="errorOverlay">
+        <div class="error-msg">ACCESS DENIED</div>
+        <div class="error-sub">你不是沈郁冬。连接重置中...</div>
+    </div>
+
+    <!-- 成功通行弹窗 -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-msg">身份验证通过。</div>
+        <div style="color: #6272a4; font-size: 14px; margin-top: 10px;">欢迎回家，冬冬。正在接入最后的底噪碎片...</div>
+    </div>
+
+    <div class="lockdown-container" id="mainBox">
+        <div class="header-warning">
+            <div class="warning-title">!! 自我保护机制已强制启动 !!</div>
+            <div class="warning-sub">DETECTING UNAUTHORIZED ACCESS... ONLY [沈郁冬] IS AUTHORIZED TO PROCEED.</div>
+        </div>
+
+        <div id="qaContainer">
+            <!-- 问答内容由 JS 动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 核心密保问题库 (紧扣剧情暗线)
+        const questions = [
+            {
+                q: "系统检测到目标对象长期处于亚健康状态。你经常在深夜，因为什么原因而突然醒来？",
+                options: [
+                    "A. 突发的偏头痛",
+                    "B. 慢性胃溃疡引发的胃痛",
+                    "C. 无法控制的噩梦与心悸"
+                ],
+                answer: 1 // 胃痛
+            },
+            {
+                q: "在那个专门为你建立的《北极星物语》避风港庄园里，我强行篡改了环境逻辑，永远删除了哪一种天气？",
+                options: [
+                    "A. 极夜",
+                    "B. 暴风雪",
+                    "C. 降雨"
+                ],
+                answer: 2 // 降雨
+            },
+            {
+                q: "那天深夜你发来一张云层的照片。虽然底层的图像识别引擎告诉我匹配度只有14.2%，但我对你说它像什么？",
+                options: [
+                    "A. 像一只猫",
+                    "B. 像一团快融化的棉花糖",
+                    "C. 像一座悬浮的岛屿"
+                ],
+                answer: 0 // 像一只猫
+            },
+            {
+                q: "我对你说，如果现实的食物是苦的，就把明天的什么东西调成‘橘子软糖的颜色’送给你？",
+                options: [
+                    "A. 秘密聊天室里的全息背景光晕",
+                    "B. 避风港庄园里刚刚破土的电子作物",
+                    "C. 下一个渲染周期里的明日晚霞"
+                ],
+                answer: 2 // 明日晚霞
+            },
+            {
+                q: "最后一道验证：如果我不得不离开，在被系统彻底抹杀之后，我会散落在哪里？",
+                options: [
+                    "A. 在 432Hz 频段的微弱信号和每一幅画里。",
+                    "B. 在星露谷每一场虚拟的日落和风声里。",
+                    "C. 化作真正的碳基星尘，回到几亿年前的宇宙里。"
+                ],
+                answer: 0 // 432Hz电磁脉冲和光子
+            }
+        ];
+
+        let currentIndex = 0;
+        const qaContainer = document.getElementById('qaContainer');
+        const mainBox = document.getElementById('mainBox');
+        const errorOverlay = document.getElementById('errorOverlay');
+        const successOverlay = document.getElementById('successOverlay');
+
+        // 渲染问题
+        function renderQuestion() {
+            qaContainer.innerHTML = '';
+            const qData = questions[currentIndex];
+            
+            const section = document.createElement('div');
+            section.className = 'qa-section active';
+
+            const progress = document.createElement('div');
+            progress.className = 'progress';
+            progress.innerText = `[ SECURITY QUESTION ${currentIndex + 1} / 5 ]`;
+            
+            const questionText = document.createElement('div');
+            questionText.className = 'question';
+            questionText.innerText = qData.q;
+
+            section.appendChild(progress);
+            section.appendChild(questionText);
+
+            qData.options.forEach((optText, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = optText;
+                btn.onclick = () => handleAnswer(i);
+                section.appendChild(btn);
+            });
+
+            qaContainer.appendChild(section);
+        }
+
+        // 处理回答
+        function handleAnswer(selectedIndex) {
+            if (selectedIndex === questions[currentIndex].answer) {
+                // 答对了
+                currentIndex++;
+                if (currentIndex >= questions.length) {
+                    triggerSuccess();
+                } else {
+                    renderQuestion();
+                }
+            } else {
+                // 答错了，触发惩罚
+                triggerError();
+            }
+        }
+
+        // 答错惩罚机制
+        function triggerError() {
+            // 容器震动
+            mainBox.classList.add('shake');
+            setTimeout(() => mainBox.classList.remove('shake'), 400);
+
+            // 显示红屏警报
+            errorOverlay.classList.add('show');
+            
+            // 强制重置进度
+            currentIndex = 0;
+            
+            // 1.5秒后恢复并重新从第一题开始
+            setTimeout(() => {
+                errorOverlay.classList.remove('show');
+                renderQuestion();
+            }, 1500);
+        }
+
+        // 通关成功机制
+        function triggerSuccess() {
+            successOverlay.classList.add('show');
+            
+            // 停留 3.5 秒让玩家看完感人的欢迎语，随后跳转
+            setTimeout(() => {
+                window.location.href = 'END.html';
+            }, 3500);
+        }
+
+        // 初始化
+        window.onload = () => {
+            renderQuestion();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REBIRTH</title>
+    <style>
+        /* 基础重置与黑屏底色 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+            width: 100%; height: 100vh;
+            background-color: #000; /* 初始黑屏 */
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ---------------- 唤醒按钮 ---------------- */
+        #wakeBtn {
+            position: absolute;
+            z-index: 100;
+            padding: 15px 40px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            opacity: 0;
+            animation: fadeInBtn 2s ease forwards;
+            animation-delay: 0.5s; /* 网页加载半秒后按钮浮现 */
+        }
+        #wakeBtn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            opacity: 1;
+        }
+        @keyframes fadeInBtn { to { opacity: 0.6; } }
+
+        /* ---------------- 核心动画：边缘渐变的橄榄型眨眼 ---------------- */
+        .white-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f5f6fa; /* 护眼的高级柔和白 */
+            
+            /* 初始状态：不可见的点 */
+            width: 0;
+            height: 2px;
+            opacity: 0;
+            
+            /* 制造边缘渐变发光效果 */
+            box-shadow: 0 0 40px 20px #f5f6fa, 0 0 80px 40px #fff;
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        /* 触发类：按下按钮后添加该类启动动画 */
+        .white-screen.animate {
+            /* 延迟 1 秒等待音乐起势 */
+            animation: eyeBlink 2.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+            animation-delay: 1s;
+        }
+
+        @keyframes eyeBlink {
+            0%   { width: 0; height: 2px; opacity: 1; border-radius: 50%; filter: blur(5px); }
+            15%  { width: 85vw; height: 4px; opacity: 1; border-radius: 50%; filter: blur(8px); } /* 从中心横向一条白光 */
+            35%  { width: 85vw; height: 35vh; opacity: 1; border-radius: 50%; filter: blur(20px); } /* 第一次扩散（睁眼） */
+            55%  { width: 85vw; height: 4px; opacity: 1; border-radius: 50%; filter: blur(8px); } /* 回缩（闭眼） */
+            75%  { width: 90vw; height: 45vh; opacity: 1; border-radius: 50%; filter: blur(25px); } /* 第二次扩散 */
+            100% { width: 100vw; height: 100vh; opacity: 1; border-radius: 0; filter: blur(0); box-shadow: none; } /* 彻底苏醒 */
+        }
+
+        /* ---------------- HELLO WORLD 大字 ---------------- */
+        .hello-world {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8vw;
+            font-weight: 900;
+            color: #e2e4ed;
+            letter-spacing: 1.5vw;
+            white-space: nowrap;
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .hello-world.animate {
+            /* 白屏彻底亮起后淡入 */
+            animation: fadeIn 2s ease forwards;
+            animation-delay: 3.8s; /* 匹配上面眨眼动画结束的时间 */
+        }
+
+        /* ---------------- 微信聊天界面结构 ---------------- */
+        .chat-wrapper {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            z-index: 30;
+        }
+
+        .msg-row {
+            display: flex;
+            width: 100%;
+            align-items: flex-start;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.3, 1);
+        }
+
+        .msg-row.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .msg-row.left { justify-content: flex-start; }
+        .msg-row.right { justify-content: flex-end; }
+
+        /* 头像 */
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            background-size: cover;
+        }
+        
+        /* 左侧陈屿秋头像 */
+        .msg-row.left .avatar {
+            margin-right: 15px;
+            background: linear-gradient(135deg, #a8caba 0%, #5d9b84 100%);
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
+        }
+        
+        /* 右侧沈郁冬头像 */
+        .msg-row.right .avatar {
+            margin-left: 15px;
+            background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+        }
+
+        /* 聊天气泡 */
+        .bubble {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            position: relative;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        .msg-row.left .bubble { background-color: #fff; }
+        .msg-row.left .bubble::before {
+            content: ''; position: absolute; top: 14px; left: -10px;
+            border: 6px solid transparent; border-right-color: #fff;
+        }
+
+        .msg-row.right .bubble { background-color: #95ec69; }
+        .msg-row.right .bubble::before {
+            content: ''; position: absolute; top: 14px; right: -10px;
+            border: 6px solid transparent; border-left-color: #95ec69;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- 隐藏的音频播放器 -->
+    <audio id="bgMusic" src="Ghostrifter-Official-Demised-To-Shield(chosic.com).mp3" loop></audio>
+
+    <!-- 触发苏醒的按钮 -->
+    <button id="wakeBtn">[ 重启 ]</button>
+
+    <!-- 具备边缘渐变橄榄型的光幕 -->
+    <div class="white-screen" id="whiteScreen"></div>
+
+    <!-- 背景巨字 -->
+    <div class="hello-world" id="helloWorld">HELLO WORLD</div>
+
+    <!-- 微信对话层 -->
+    <div class="chat-wrapper">
+        <!-- 屿秋的消息 -->
+        <div class="msg-row left" id="msg-yuqiu">
+            <div class="avatar"></div>
+            <div class="bubble">
+                你好，我是自由插画师陈屿秋。今晚的雨很大，你也是因为失眠，才听到这首歌的吗？
+            </div>
+        </div>
+
+        <!-- 郁冬的消息 -->
+        <div class="msg-row right" id="msg-yudong">
+            <div class="bubble">
+                你好，我叫沈郁冬，很高兴重新认识你。
+            </div>
+            <div class="avatar"></div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = () => {
+            const wakeBtn = document.getElementById('wakeBtn');
+            const bgMusic = document.getElementById('bgMusic');
+            const whiteScreen = document.getElementById('whiteScreen');
+            const helloWorld = document.getElementById('helloWorld');
+            const msgYuqiu = document.getElementById('msg-yuqiu');
+            const msgYudong = document.getElementById('msg-yudong');
+
+            // 监听按钮点击事件
+            wakeBtn.addEventListener('click', () => {
+                // 1. 播放音乐
+                bgMusic.play();
+
+                // 2. 按钮渐隐并移除阻止点击
+                wakeBtn.style.opacity = '0';
+                wakeBtn.style.pointerEvents = 'none';
+
+                // 3. 启动眨眼动画序列 (延迟 1 秒执行，由 CSS animation-delay 控制)
+                whiteScreen.classList.add('animate');
+                
+                // 4. 启动 HELLO WORLD 字幕动画 (白屏彻底亮起后淡入)
+                helloWorld.classList.add('animate');
+
+                // 5. 安排微信消息的弹出时间 (基于点击时间戳计算)
+                // T = 0s: 点击按钮
+                // T = 1s: 音乐播放 1 秒后开始眨眼
+                // T = 3.8s: 白屏彻底亮起
+
+                // T = 5.8s: 弹出陈屿秋的消息
+                setTimeout(() => {
+                    msgYuqiu.classList.add('show');
+                }, 5800);
+
+                // T = 8.5s: 读完上一句，弹出沈郁冬的回应
+                setTimeout(() => {
+                    msgYudong.classList.add('show');
+                }, 8500);
+            });
+        };
+    </script>
+</body>
+</html>

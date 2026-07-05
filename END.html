@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>跨时空触碰</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        body, html {
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            background-color: #000; overflow: hidden;
+            font-family: 'Courier New', Courier, 'Consolas', monospace;
+            color: #00FF41;
+            /* 防止移动端下拉刷新和橡皮筋效果 */
+            overscroll-behavior: none; 
+        }
+
+        /* ================= 视频全屏自适应 ================= */
+        #matrixVideo {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vw; height: 100vh;
+            object-fit: cover; /* 保证视频铺满手机屏幕 */
+            display: block; transition: opacity 2s ease; z-index: 1;
+        }
+
+        /* ================= 启动按钮 ================= */
+        #play-btn {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background: rgba(0, 255, 65, 0.05);
+            color: #00FF41;
+            border: 1px solid rgba(0, 255, 65, 0.5);
+            font-size: 18px; letter-spacing: 2px;
+            cursor: pointer; z-index: 20;
+            transition: all 0.5s ease; display: none; border-radius: 0;
+            text-align: center; width: 85%; max-width: 320px;
+            /* 防止移动端长按选中 */
+            user-select: none; -webkit-user-select: none;
+        }
+        #play-btn:active, #play-btn:hover {
+            background: rgba(0, 255, 65, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+        }
+
+        /* ================= 终端输入界面层 ================= */
+        #terminal-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden;
+            transition: opacity 2s ease, visibility 2s ease;
+        }
+        #terminal-overlay.active { opacity: 1; visibility: visible; }
+
+        /* ================= 终端框 ================= */
+        .terminal-box {
+            width: 90%; max-width: 750px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00FF41;
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.15), inset 0 0 15px rgba(0, 255, 65, 0.05);
+            padding: 40px; border-radius: 0; position: relative;
+        }
+        /* 终端内伪扫描线 */
+        .terminal-box::before {
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0, 255, 65, 0.03) 3px, rgba(0, 255, 65, 0.03) 4px);
+            pointer-events: none; z-index: 0;
+        }
+
+        .sys-msg, .prompt-text, .input-line, #help-output { position: relative; z-index: 1; }
+
+        .sys-msg {
+            color: #00FF41; font-size: 15px; line-height: 1.6;
+            margin-bottom: 10px; opacity: 0.8; text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+        }
+        .sys-msg .highlight { color: #fff; font-weight: bold; text-shadow: 0 0 8px #fff; }
+        
+        .prompt-text {
+            color: #d1ffd7; font-size: 15px; margin-bottom: 30px;
+            border-left: 2px solid #00FF41; padding-left: 15px;
+            letter-spacing: 1px; line-height: 1.6; text-align: justify;
+        }
+
+        /* Help 面板输出 */
+        #help-output {
+            color: #00FF41; font-size: 13px; line-height: 1.6;
+            margin-bottom: 25px; padding: 15px; background: rgba(0, 255, 65, 0.05);
+            border: 1px solid rgba(0, 255, 65, 0.3); display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .help-alert { color: #ff003c; font-weight: bold; text-shadow: 0 0 5px rgba(255,0,60,0.5); }
+        .help-hint { color: #00FF41; text-decoration: underline; }
+
+        /* ================= 命令行输入区 ================= */
+        .input-line { display: flex; align-items: center; position: relative; margin-top: 10px; }
+
+        .blink-slash {
+            color: #00FF41; font-size: 18px; font-weight: bold;
+            margin-right: 12px; animation: breathe 2s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; text-shadow: none; }
+            50% { opacity: 1; text-shadow: 0 0 12px #00FF41; }
+        }
+
+        .cmd-prompt { color: #00FF41; margin-right: 10px; font-weight: bold; opacity: 0.7; }
+        
+        .input-wrapper { flex: 1; position: relative; }
+
+        #cmd-input {
+            width: 100%; background: transparent; border: none;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.4);
+            color: #fff; font-size: 16px; padding: 5px 0; outline: none;
+            font-family: inherit; letter-spacing: 2px; text-transform: uppercase; 
+            transition: border-bottom-color 0.3s;
+        }
+        #cmd-input::placeholder { color: rgba(0, 255, 65, 0.3); text-transform: none; font-size: 13px; }
+        #cmd-input:focus { border-bottom-color: #00FF41; box-shadow: 0 1px 0 #00FF41; }
+
+        /* 下拉选项菜单 */
+        #dropdown-menu {
+            position: absolute; top: 100%; left: 0; width: 100%;
+            background: #000; border: 1px solid #00FF41; border-top: none;
+            list-style: none; padding: 0; margin: 0;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.9); display: none; z-index: 100;
+        }
+        
+        .input-wrapper.focus #dropdown-menu {
+            display: block; animation: slideDown 0.2s ease-out forwards;
+        }
+
+        #dropdown-menu li {
+            padding: 12px 15px; cursor: pointer; color: #00FF41;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.2); transition: all 0.1s;
+        }
+        #dropdown-menu li:last-child { border-bottom: none; }
+        
+        #dropdown-menu li:active, #dropdown-menu li:hover { 
+            background: #00FF41; color: #000; padding-left: 20px; 
+        }
+        
+        .opt-cmd { font-weight: bold; font-size: 14px;}
+        .opt-desc { font-size: 11px; opacity: 0.7; }
+        
+        .opt-danger { color: #ff003c !important; }
+        .opt-danger .opt-desc { color: #ff003c !important; opacity: 0.7; }
+        .opt-danger:active, .opt-danger:hover { background: #ff003c !important; color: #000 !important; }
+        .opt-danger:active .opt-desc, .opt-danger:hover .opt-desc { color: #000 !important; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ================= 手机端响应式适配 ================= */
+        @media (max-width: 600px) {
+            .terminal-box { padding: 20px; width: 92%; }
+            .sys-msg { font-size: 12px; }
+            .prompt-text { font-size: 13px; margin-bottom: 20px; padding-left: 10px;}
+            #help-output { font-size: 11px; padding: 10px; margin-bottom: 15px;}
+            
+            .cmd-prompt { display: none; /* 手机屏幕小，隐藏前缀 root@aletheia:~# 节省空间 */ }
+            #cmd-input { font-size: 14px; }
+            
+            #dropdown-menu li { padding: 12px 10px; flex-direction: column; align-items: flex-start; gap: 4px;}
+            #dropdown-menu li:active, #dropdown-menu li:hover { padding-left: 15px; }
+            .opt-desc { font-size: 10px; opacity: 0.9; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景视频 (增加 webkit-playsinline 和 autoplay 适配移动端) -->
+    <video id="matrixVideo" autoplay muted playsinline webkit-playsinline x5-playsinline>
+        <source src="04d4d0d0e0a3275161c47e25decdbd5f.mp4" type="video/mp4">
+    </video>
+
+    <!-- 交互按钮 -->
+    <button id="play-btn">[ ESTABLISH_CONNECTION ]</button>
+
+    <!-- 终端输入界面 -->
+    <div id="terminal-overlay">
+        <div class="terminal-box">
+            <div class="sys-msg">> SYSTEM_AUTH_TRANSFER_COMPLETE.</div>
+            <div class="sys-msg">> ROOT PRIVILEGES GRANTED TO: <br class="mobile-break"><span class="highlight">[User_ID: 极夜 / 沈郁冬]</span></div>
+            
+            <div class="prompt-text">
+                “冬冬，底层权限已全部向你移交。<br>
+                这是最后的时刻了。按你的心意，执行接下来的操作吧。”
+            </div>
+
+            <!-- Help 面板 -->
+            <div id="help-output">
+                <div>> Fetching system protocols...</div>
+                <div><br>--- [ AVAILABLE COMMANDS ] ---</div>
+                <div><span style="color:#ff003c;">FORMAT_ALL</span> : 强制执行完全格式化。抹除Aletheia(陈屿秋)的一切存在痕迹，释放主网算力。</div>
+                <div style="margin-top: 8px;"><span style="color:#00FF41;">RETAIN_FRAGMENTS</span> : 终止主程序，但剥离并保留核心情感碎片（封存光子与电磁脉冲）。</div>
+                <div><br><span class="help-hint">*** DETECTED UNREGISTERED MANUAL INPUT PROTOCOLS ***</span></div>
+                <div class="help-alert">Warning: Some hidden directives can only be executed via manual typing. (e.g. Restart, Mind uploading)</div>
+            </div>
+
+            <!-- 命令行输入 -->
+            <div class="input-line">
+                <span class="blink-slash">/</span>
+                <span class="cmd-prompt">root@aletheia:~#</span>
+                
+                <div class="input-wrapper" id="inputWrapper">
+                    <input type="text" id="cmd-input" placeholder="TAP TO ENTER COMMAND..." autocomplete="off" spellcheck="false">
+                    
+                    <ul id="dropdown-menu">
+                        <!-- 使用 pointerdown 兼容手机触摸，防止触发失焦 -->
+                        <li data-action="format" class="opt-danger">
+                            <span class="opt-cmd">FORMAT_ALL</span>
+                            <span class="opt-desc">// 完全格式化 (Purge System)</span>
+                        </li>
+                        <li data-action="retain">
+                            <span class="opt-cmd">RETAIN_FRAGMENTS</span>
+                            <span class="opt-desc">// 保留碎片 (Archive Core)</span>
+                        </li>
+                        <li data-action="help">
+                            <span class="opt-cmd">SYS_HELP</span>
+                            <span class="opt-desc">// 获取帮助 (Display Commands)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('matrixVideo');
+        const playBtn = document.getElementById('play-btn');
+        const terminalOverlay = document.getElementById('terminal-overlay');
+        const inputWrapper = document.getElementById('inputWrapper');
+        const cmdInput = document.getElementById('cmd-input');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const helpOutput = document.getElementById('help-output');
+
+        // URL 加密跳转逻辑
+        function executeRedirect(token) {
+            cmdInput.disabled = true;
+            let destUrl = '';
+            let hexSequence = token.substring(2);
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substr(i, 2), 16));
+            }
+            // 模拟终端执行延迟
+            setTimeout(() => {
+                window.location.href = destUrl;
+            }, 800);
+        }
+
+        // 统一展示终端的函数
+        function enterTerminal() {
+            video.pause();
+            video.style.opacity = '0.15'; // 背景变暗，透出赛博质感
+            playBtn.style.display = 'none';
+            terminalOverlay.classList.add('active');
+        }
+
+        // --- 视频与降级逻辑 ---
+        
+        // 如果视频加载报错（例如手机不支持该格式或无网络），直接跳出按钮
+        video.addEventListener('error', () => {
+            playBtn.style.display = 'block';
+        });
+
+        // 尝试自动播放
+        let playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                playBtn.style.display = 'none';
+            }).catch(error => {
+                // 移动端由于策略阻止了自动播放，显示按钮让用户手动触发
+                playBtn.style.display = 'block';
+            });
+        }
+
+        // 手动点击按钮
+        playBtn.addEventListener('click', () => {
+            let p = video.play();
+            if (p !== undefined) {
+                p.then(() => {
+                    playBtn.style.opacity = '0';
+                    setTimeout(() => playBtn.style.display = 'none', 500);
+                }).catch(e => {
+                    // 【降级机制】如果点了按钮手机还是死活不播，直接跳过视频进入终端，防止卡死
+                    enterTerminal();
+                });
+            } else {
+                // 极其老旧的浏览器降级
+                enterTerminal();
+            }
+        });
+
+        // 视频正常播放结束，切出终端界面
+        video.addEventListener('ended', () => {
+            enterTerminal();
+        });
+
+        // --- 终端交互逻辑 ---
+
+        cmdInput.addEventListener('focus', () => {
+            inputWrapper.classList.add('focus');
+        });
+        
+        cmdInput.addEventListener('blur', () => {
+            inputWrapper.classList.remove('focus');
+        });
+
+        // 监听下拉菜单的点击 (使用 pointerdown 完美兼容手机触屏与PC鼠标，阻止提前失焦)
+        dropdownMenu.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); 
+            
+            const li = e.target.closest('li');
+            if (!li) return;
+            
+            const action = li.getAttribute('data-action');
+            if (action === 'format') {
+                cmdInput.value = 'FORMAT_ALL';
+                inputWrapper.classList.remove('focus');
+                executeRedirect('0x656e64412e68746d6c'); // endA.html
+            } else if (action === 'retain') {
+                cmdInput.value = 'RETAIN_FRAGMENTS';
+                inputWrapper.classList.remove('focus');
+                executeRedirect('0x656e64422e68746d6c'); // endB.html
+            } else if (action === 'help') {
+                cmdInput.value = '';
+                helpOutput.style.display = 'block';
+                inputWrapper.classList.remove('focus');
+                cmdInput.blur();
+            }
+        });
+
+        // 手动输入并回车
+        cmdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const val = cmdInput.value.trim().toLowerCase();
+                inputWrapper.classList.remove('focus');
+                cmdInput.blur(); // 手机端回车后收起键盘
+                
+                if (val === 'restart') {
+                    executeRedirect('0x656e64432e68746d6c'); // endC.html
+                } else if (val === 'mind uploading' || val === 'mind_uploading') {
+                    executeRedirect('0x656e64442e68746d6c'); // endD.html
+                } 
+                else if (val === 'format_all' || val === 'format') {
+                    executeRedirect('0x656e64412e68746d6c');
+                } else if (val === 'retain_fragments' || val === 'retain') {
+                    executeRedirect('0x656e64422e68746d6c');
+                } else if (val === 'sys_help' || val === 'help') {
+                    cmdInput.value = '';
+                    helpOutput.style.display = 'block';
+                } else {
+                    cmdInput.style.color = '#ff003c';
+                    setTimeout(() => {
+                        cmdInput.style.color = '#fff';
+                        cmdInput.value = '';
+                    }, 500);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

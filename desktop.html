@@ -1,0 +1,415 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极夜 - 桌面</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            width: 100vw; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; 
+            background-image: url('桌面.png'); 
+            background-color: #f0f2f5; 
+            background-size: cover; 
+            background-position: center; 
+            position: relative;
+        }
+
+        /* ================= 剧情过渡层 (黑幕声明) ================= */
+        #intro-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+        }
+
+        .intro-card {
+            background: rgba(255, 255, 255, 0.95);
+            width: 100%;
+            max-width: 480px;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transform: translateY(0) scale(1);
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s;
+            position: relative;
+        }
+
+        .intro-card::before {
+            content: '';
+            position: absolute;
+            top: 15px; left: 50%;
+            transform: translateX(-50%);
+            width: 40px; height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+        }
+
+        .intro-title {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 20px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .intro-text {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 35px;
+            text-align: justify;
+        }
+
+        .intro-text p { margin-bottom: 15px; }
+
+        .intro-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            text-align: center;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: background 0.3s;
+        }
+
+        .intro-btn:hover { background: #1557b0; }
+
+        /* ================= 桌面 UI 系统 ================= */
+        /* 顶部状态栏 */
+        .menu-bar {
+            width: 100%;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .menu-left { display: flex; gap: 16px; align-items: center; }
+        .menu-left span { cursor: default; }
+        .menu-left .apple-icon { font-size: 15px; }
+        .menu-left .active { font-weight: 700; }
+        .menu-right { display: flex; gap: 16px; align-items: center; }
+
+        /* 小组件容器 */
+        .widgets-container {
+            position: absolute;
+            top: 60px;
+            right: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 300px;
+        }
+
+        .widget {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 22px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+        .widget:hover { transform: scale(1.02); }
+
+        /* 时钟 */
+        .clock-widget {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 140px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.5));
+        }
+        .clock-time { font-size: 3.5rem; font-weight: 200; color: #1d1d1f; letter-spacing: -1px; line-height: 1; margin-bottom: 8px;}
+        .clock-date { font-size: 1rem; font-weight: 500; color: #86868b; }
+
+        /* 天气 */
+        .weather-widget {
+            height: 140px;
+            background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: none;
+        }
+        .weather-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .weather-city { font-size: 1.1rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .weather-icon { font-size: 2rem; }
+        .weather-temp { font-size: 3rem; font-weight: 300; line-height: 1; }
+        .weather-desc { font-size: 0.9rem; font-weight: 500; opacity: 0.9; }
+
+        /* 便签 */
+        .note-widget {
+            background: #fff9b1; 
+            border-radius: 12px;
+            padding: 25px 20px 20px 20px;
+            border: none;
+            box-shadow: 2px 8px 20px rgba(0,0,0,0.1);
+            transform: rotate(-1deg);
+        }
+        .note-widget:hover { transform: rotate(0deg) scale(1.02); }
+        .tape {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-2deg);
+            width: 80px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            backdrop-filter: blur(2px);
+        }
+        .note-title { font-weight: bold; font-size: 1rem; color: #333; margin-bottom: 10px; font-family: "Kaiti", "STKaiti", serif; }
+        .note-content { font-size: 0.95rem; color: #555; line-height: 1.6; font-family: "Kaiti", "STKaiti", serif; }
+        .note-content ul { padding-left: 18px; margin-bottom: 10px; }
+        .note-content li { margin-bottom: 5px; }
+        .note-highlight { color: #e74c3c; font-weight: bold; }
+
+        /* 底部 Dock */
+        .dock-container {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .dock {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 28px;
+            padding: 10px 15px;
+            display: flex;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .dock-item {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            background: #fff;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .dock-item:hover {
+            transform: scale(1.25) translateY(-10px);
+            margin: 0 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+        .tooltip {
+            position: absolute;
+            top: -45px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.85) transparent transparent transparent;
+        }
+        .dock-item:hover .tooltip { opacity: 1; }
+
+        /* 图标定制 (统一圆角矩形) */
+        .icon-wx { background: linear-gradient(180deg, #1bdc69 0%, #07c160 100%); font-size: 32px; color: #fff;}
+        .icon-wyy { background: linear-gradient(180deg, #ff4c4c 0%, #e60000 100%); font-size: 32px; color: #fff;}
+        .icon-web { background: #fff; font-size: 38px;}
+        .icon-xhs { background: linear-gradient(180deg, #ff2442 0%, #e60000 100%); font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; letter-spacing: 1px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="intro-overlay">
+        <div class="intro-card" id="intro-card">
+            <div class="intro-title">草稿箱 - 未命名.txt</div>
+            <div class="intro-text">
+                <p>我们认识的第227天，你彻底失联了</p>
+                <p>7月2日凌晨3点17分，我们的最后一次通话毫无征兆地中断。随后，所有能联络到你的方式都在几分钟内完全失效。没有争吵，没有道别。</p>
+                <p>下周就要截稿了，我依然因为胃疼而失眠。</p>
+                <p>我不管你是现实里遇到了麻烦，还是精心策划了一场人间蒸发。陈屿秋，作为一个撰稿人，我最讨厌烂尾的故事。</p>
+                <p>就算是翻遍网络，我也得要个答案。</p>
+            </div>
+            <button class="intro-btn" onclick="unlockSystem()">保存草稿并进入系统</button>
+        </div>
+    </div>
+
+    <div class="menu-bar">
+        <div class="menu-left">
+            <span class="apple-icon"></span>
+            <span class="active">Finder</span>
+            <span>文件</span>
+            <span>编辑</span>
+            <span>显示</span>
+            <span>前往</span>
+            <span>窗口</span>
+            <span>帮助</span>
+        </div>
+        <div class="menu-right">
+            <span>100% 🔋</span>
+            <span>WIFI</span>
+            <span id="menu-time">周四 09:41</span>
+        </div>
+    </div>
+
+    <div class="widgets-container">
+        <div class="widget clock-widget">
+            <div class="clock-time" id="clock-time">00:00</div>
+            <div class="clock-date" id="clock-date">6月25日 星期四</div>
+        </div>
+
+        <div class="widget weather-widget">
+            <div class="weather-top">
+                <div class="weather-city">江城<br><span style="font-size:12px; font-weight:400; opacity:0.9;">我的位置</span></div>
+                <div class="weather-icon">☀️</div>
+            </div>
+            <div class="weather-temp">38°</div>
+        </div>
+
+        <div class="widget note-widget">
+            <div class="tape"></div>
+            <div class="note-title">📝 备忘录 (今日待办)</div>
+            <div class="note-content">
+                <ul>
+                    <li>交稿：向屿秋要《落日》的源文件！</li>
+                    <li>养生：<span class="note-highlight">禁止吃冰</span>！胃药在左边抽屉。</li>
+                </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dock-container">
+        <div class="dock">
+            <div class="dock-item icon-wx" onclick="launchApp('0x76782e68746d6c')">
+                💬
+                <div class="tooltip">微信</div>
+            </div>
+            <div class="dock-item icon-xhs" onclick="launchApp('0x7868732e68746d6c')">
+                小红书
+                <div class="tooltip">小红书</div>
+            </div>
+            <div class="dock-item icon-wyy" onclick="launchApp('0x7779792e68746d6c')">
+                🎵
+                <div class="tooltip">网易云音乐</div>
+            </div>
+            <div style="width: 1px; height: 50px; background: rgba(0,0,0,0.1); margin: 5px 5px;"></div>
+            <div class="dock-item icon-web" onclick="launchApp('0x7365617263682e68746d6c')">
+                🧭
+                <div class="tooltip">浏览器</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 转场逻辑：淡出黑幕，进入桌面
+        function unlockSystem() {
+            const overlay = document.getElementById('intro-overlay');
+            const card = document.getElementById('intro-card');
+            
+            // 卡片轻微下沉并透明
+            card.style.transform = 'translateY(40px) scale(0.95)';
+            card.style.opacity = '0';
+            
+            // 背景毛玻璃淡出
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+            }, 200);
+
+            // 彻底移除 DOM 元素，防止阻挡点击
+            setTimeout(() => {
+                overlay.style.visibility = 'hidden';
+            }, 1000);
+        }
+
+        // 2. 时钟更新逻辑
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('clock-time').innerText = `${hours}:${minutes}`;
+            
+            const options = { month: 'long', day: 'numeric', weekday: 'long' };
+            const dateString = now.toLocaleDateString('zh-CN', options);
+            document.getElementById('clock-date').innerText = dateString;
+
+            const shortWeekday = now.toLocaleDateString('zh-CN', { weekday: 'short' });
+            document.getElementById('menu-time').innerText = `${shortWeekday} ${hours}:${minutes}`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 3. 加密跳转逻辑
+        function launchApp(token) {
+            let destUrl = '';
+            let hexSequence = token.substring(2);
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substring(i, i + 2), 16));
+            }
+            let link = document.createElement('a');
+            link.href = destUrl;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
+
+```

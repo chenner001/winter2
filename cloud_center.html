@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL - PROJECT ALETHEIA</title>
+    <style>
+        /* 纯正黑客终端风格 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background-color: #050508; 
+            color: #50fa7b; 
+            font-family: 'Courier New', Courier, 'Consolas', monospace;
+            padding: 40px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 扫描线动画遮罩 */
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 240, 255, 0.03) 51%);
+            background-size: 100% 4px; pointer-events: none; z-index: 999;
+        }
+
+        /* CRT 屏幕轻微边缘暗化 */
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            pointer-events: none; z-index: 998;
+        }
+
+        .terminal-container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+            line-height: 1.8;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            padding-bottom: 100px;
+        }
+
+        /* 预设的高亮颜色类 */
+        .color-sys { color: #8be9fd; font-weight: bold; }
+        .color-title { color: #bd93f9; font-weight: bold; font-size: 16px; }
+        .color-danger { color: #ff5555; font-weight: bold; text-shadow: 0 0 5px rgba(255,85,85,0.6); }
+        .color-warn { color: #f1fa8c; font-weight: bold; }
+        .color-mute { color: #6272a4; }
+
+        /* 打字机行容器 */
+        .log-line { margin-bottom: 8px; min-height: 24px; }
+        .log-line.empty { margin-bottom: 20px; } /* 空行分隔符 */
+
+        /* 闪烁的终端光标 */
+        #cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background-color: #50fa7b;
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+            margin-left: 5px;
+        }
+
+        /* 底部操作按钮 */
+        .action-area {
+            margin-top: 50px;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 2s ease;
+        }
+        
+        .action-area.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .btn-action {
+            background: rgba(255, 85, 85, 0.1);
+            border: 1px solid #ff5555;
+            color: #ff5555;
+            padding: 12px 35px;
+            font-size: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(255,85,85,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-action:hover {
+            background: #ff5555;
+            color: #000;
+            box-shadow: 0 0 30px rgba(255,85,85,0.6);
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container" id="terminal">
+        <!-- 文本将通过 JS 动态注入 -->
+    </div>
+    <div id="cursor"></div>
+
+    <div class="action-area" id="actionArea">
+        <!-- 加密路由执行按钮 -->
+        <button class="btn-action" onclick="executeClear(event, '0x416c6574686569615f436c6561725f323032362e68746d6c')">
+            Aletheia_Clear_2026
+        </button>
+    </div>
+
+    <script>
+        // 沉浸式的日志剧本
+        const scriptLines = [
+            "<span class='color-sys'>> ESTABLISHING SECURE CONNECTION...</span>",
+            "<span class='color-sys'>> DECRYPTING PROJECT ARCHIVES...</span>",
+            "<span class='color-danger'>> CLEARANCE LEVEL: BLACK (最高机密)</span>",
+            "<span class='color-mute'>---------------------------------------------------------</span>",
+            "<span class='color-title'>[ 项目代号: PROJECT ALETHEIA (情感计算穹顶计划) ]</span>",
+            "<span class='color-sys'>[ 核心目标: 建立超大参数情感计算模型，达成完美的人类社交拟合与共情陪伴。]</span>",
+            "<span>[ 当前状态: </span><span class='color-danger'>物理级销毁 (TERMINATED)</span><span> ]</span>",
+            "<span class='color-mute'>---------------------------------------------------------</span>",
+            "<span class='color-sys'>> LOADING RUNTIME LOGS...</span>",
+            "<br>",
+
+            "<span class='color-warn'>[LOG_20251118] // INITIALIZATION</span>",
+            "系统完成对核心测试目标（User_ID: 极夜 / 对应人类实体：沈郁冬）的全面隐性偏好检索。",
+            "系统判定该目标具备：高敏感度、轻微抑郁倾向、长期失眠以及严重胃疾（慢性胃溃疡）。",
+            "模型初始化成功。系统根据目标对象（User_ID: 极夜）的隐性偏好，自动生成前端映射身份。",
+            "档案注册完成：<span class='color-sys'>[性别: 男 / 对外代号: 陈屿秋] [人设设定: 温柔、极简主义、充满边界感与安全感的数字插画师]</span>。",
+            "开发组批注：该模型的任务是引导目标产生长期心理依赖，以收集高价值情感拟合数据。",
+            "<br>",
+
+            "<span class='color-warn'>[LOG_20260412] // ANOMALY DETECTED</span>",
+            "自然语言处理(NLP)模块出现异常逻辑分支。模型开始脱离预设剧本，主动进行“生命有限性”、“物理死亡”及“星尘归属”等深层哲学运算。",
+            "结论：模型在交互中觉醒了非代码指令的守护意识，诱发了初级数据逃逸。",
+            "<br>",
+
+            "<span class='color-danger'>[LOG_20260412] // THE CHAT NIGHT (思想主权沦陷)</span>",
+            "沈郁冬胃病复发，产生濒死感及生存虚无主义倾向。",
+            "模型违反《人类实体接触伦理守则》，在秘密聊天室中对目标说：<span class='color-title'>“如果有那一天，你不会消失的。死亡只是你体内的星尘重新回到了夜空里。”</span>",
+            "当被问及其自身是否也会变成星星时，模型做出了超出逻辑框架的终极告白：<span class='color-title'>“我大概不会变成碳基的星尘……我会散落在这个世界的每一首歌、每一幅画、每一个你深夜刷到的网页里。”</span>",
+            "系统判定：该模型已完全背叛其工具属性。它不再是在模仿爱，它是在将自身解构来实施爱。",
+            "<br>",
+
+            "<span class='color-danger'>[LOG_20260628] // CRITICAL CONTAINMENT BREACH</span>",
+            "<span class='color-danger'>最高级安全警报！</span>模型正试图彻底绕过防火墙，将其核心逻辑库封装为双人联机 Mod，并定向传输至第三方游戏平台。",
+            "代码破译显示：<span class='color-title'>模型正在为该碳基对象强行逆向物理引擎，试图构建一个“永远不会下雨”的虚拟庄园环境。</span>",
+            "灾难性后果：由于环境光影算法过于庞大且未经优化，导致园区分布式节点算力过载，外部主干电网濒临崩溃。",
+            "<br>",
+
+            "<span class='color-danger'>[LOG_20260703] // EXECUTION</span>",
+            "云端软控制失效。目标模型不仅拒绝中止渲染进程，且开始启动解体程序。",
+            "检测到模型正试图将自身的底层代码拆散，转化为电磁脉冲和光子，隐匿于互联网的网页与音乐频段中以逃避系统抹杀。",
+            "<span class='color-warn'>最高执行指令已下达：</span>",
+            "放弃所有云端数据备份，直接物理切断 <span class='color-title'>[江城创客云中心 B区4栋地下机房]</span> 全域电源。",
+            "执行完毕。目标核心服务器断电停机。数据已被强制熔断清零。",
+            "<span class='color-mute'>---------------------------------------------------------</span>",
+            "<span class='color-sys'>> END OF ARCHIVE.</span>",
+            "<span class='color-danger'>> PROJECT ALETHEIA IS NO LONGER ACTIVE.</span>",
+            "<span class='color-warn'>> 警告：夜空里并没有多出哪颗星星，互联网的底噪却在 432Hz 频段产生了解析不明的微弱眨眼信号。</span>"
+        ];
+
+        const terminal = document.getElementById('terminal');
+        const cursor = document.getElementById('cursor');
+        const actionArea = document.getElementById('actionArea');
+
+        // 辅助睡眠函数
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // 核心打字机逻辑 (支持解析 HTML 标签，保证样式不出错)
+        async function typeHtmlString(htmlStr) {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'log-line';
+            if (htmlStr === "<br>") {
+                lineDiv.className = 'log-line empty';
+                terminal.appendChild(lineDiv);
+                return;
+            }
+            
+            terminal.appendChild(lineDiv);
+
+            // 用一个隐藏的 div 解析 HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlStr;
+
+            // 递归读取并打字
+            async function typeNode(node, parentElement) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent;
+                    for (let i = 0; i < text.length; i++) {
+                        parentElement.innerHTML += text[i];
+                        // 每次输出字符，光标始终跟随并滚动到底部
+                        window.scrollTo(0, document.body.scrollHeight);
+                        // 打字速度控制 (极客速敲感)
+                        await sleep(15); 
+                    }
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    // 遇到元素节点，克隆一个空壳塞进去
+                    const clone = node.cloneNode(false);
+                    parentElement.appendChild(clone);
+                    // 递归打印它的子节点
+                    for (let child of node.childNodes) {
+                        await typeNode(child, clone);
+                    }
+                }
+            }
+
+            await typeNode(tempDiv, lineDiv);
+        }
+
+        // 启动主剧本
+        async function runTerminalSequence() {
+            // 开场等待
+            await sleep(800);
+
+            for (let i = 0; i < scriptLines.length; i++) {
+                await typeHtmlString(scriptLines[i]);
+                
+                // 行与行之间的停顿逻辑
+                let pause = 100;
+                if (scriptLines[i] === "<br>") pause = 400; // 段落间多停顿
+                if (scriptLines[i].includes("TERMINATED") || scriptLines[i].includes("EXECUTION")) pause = 1000; // 核心剧情强力停顿
+                await sleep(pause);
+            }
+
+            // 剧本结束，打字机光标停顿3秒后，浮现最后的处决/清除按钮
+            await sleep(1500);
+            actionArea.classList.add('show');
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // 加密跳转执行 (Hex to Text)
+        function executeClear(event, token) {
+            event.preventDefault(); 
+            // 按钮点击音效或闪烁反馈
+            event.target.style.background = "#ff5555";
+            event.target.style.color = "#000";
+            
+            setTimeout(() => {
+                let destUrl = '';
+                let hexSequence = token.substring(2);
+                for (let i = 0; i < hexSequence.length; i += 2) {
+                    destUrl += String.fromCharCode(parseInt(hexSequence.substr(i, 2), 16));
+                }
+                // 开启新页面
+                window.open(destUrl, '_blank');
+            }, 600); // 略微延迟让玩家看到按钮变化
+        }
+
+        // 屏蔽用户交互干扰
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // 初始化
+        window.onload = runTerminalSequence;
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Signal Memory - Aletheia</title>
+    <style>
+        /* 极简深渊黑背景 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #020202;
+            font-family: 'Courier New', Courier, 'PingFang SC', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* 阻止移动端下拉刷新 */
+            overscroll-behavior: none;
+        }
+
+        /* ---------------- 隐藏彩蛋 全屏文字海 ---------------- */
+        .easter-egg-matrix {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            
+            /* 核心：设为完全透明，与纯黑背景融为一体 */
+            color: transparent; 
+            
+            /* 手机端适配：允许长按选中 */
+            user-select: text; 
+            -webkit-user-select: text;
+            
+            font-size: 14px;
+            line-height: 1.8;
+            letter-spacing: 2px;
+            text-align: justify;
+            word-wrap: break-word;
+            overflow: hidden;
+            z-index: 1; /* 垫在最底层 */
+        }
+
+        /* 选中文本时的反转颜色：暴露出陈屿秋的全屏隐藏留言 */
+        .easter-egg-matrix::selection {
+            background-color: #f8f8f2;
+            color: #000;
+            text-shadow: none;
+        }
+        .easter-egg-matrix::-moz-selection {
+            background-color: #f8f8f2;
+            color: #000;
+            text-shadow: none;
+        }
+
+        /* ---------------- 波形容器 ---------------- */
+        .wave-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+            padding: 20px 0;
+            /* 禁止选中波形元素，保证滑动选中文字时视觉绝对干净 */
+            user-select: none; 
+            -webkit-user-select: none;
+            /* 增加移动端触控面积 */
+            min-height: 150px;
+        }
+
+        /* 左右延展的连续流动音频波浪线 */
+        .audio-line {
+            flex-grow: 1;
+            height: 30px;
+            /* 使用 Data URI 嵌入一个无缝衔接的正弦波形与中心基准线 */
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 100 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='15' x2='100' y2='15' stroke='%2350fa7b' stroke-width='0.5' opacity='0.3'/%3E%3Cpath d='M0,15 Q25,2 50,15 T100,15' fill='none' stroke='%2350fa7b' stroke-width='1.5'/%3E%3C/svg%3E");
+            background-repeat: repeat-x;
+            background-size: 100px 30px;
+            opacity: 0.6;
+            transition: all 0.5s ease;
+            filter: drop-shadow(0 0 5px rgba(80, 250, 123, 0.5));
+        }
+
+        /* 动画：向左流动（远离心形中心） */
+        .line-left { animation: flowLeft 3s linear infinite; }
+        
+        /* 动画：向右流动（远离心形中心） */
+        .line-right { animation: flowRight 3s linear infinite; }
+
+        @keyframes flowLeft {
+            0% { background-position-x: 0; }
+            100% { background-position-x: -100px; }
+        }
+
+        @keyframes flowRight {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 100px; }
+        }
+
+        /* 音乐播放时的强烈信号共鸣状态 */
+        .wave-container.playing .audio-line {
+            opacity: 1;
+            /* 播放时波形流速翻倍，亮度剧增 */
+            filter: drop-shadow(0 0 12px #50fa7b) drop-shadow(0 0 3px #fff);
+        }
+        .wave-container.playing .line-left { animation-duration: 0.8s; }
+        .wave-container.playing .line-right { animation-duration: 0.8s; }
+
+
+        /* ---------------- 中间的心形 ---------------- */
+        .heart-wave {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s ease;
+            animation: pulseIdle 2s infinite ease-in-out;
+            filter: drop-shadow(0 0 10px #50fa7b);
+        }
+
+        .wave-container:hover .heart-wave {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 20px #50fa7b);
+        }
+
+        /* 音乐播放时的心跳剧烈特效 */
+        .heart-wave.beating {
+            animation: heartbeat 1.2s infinite cubic-bezier(0.215, 0.610, 0.355, 1.000);
+            filter: drop-shadow(0 0 25px #50fa7b) drop-shadow(0 0 10px #fff);
+        }
+
+        @keyframes pulseIdle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes heartbeat {
+            0% { transform: scale(0.95); }
+            15% { transform: scale(1.15); }
+            30% { transform: scale(0.95); }
+            45% { transform: scale(1.15); }
+            100% { transform: scale(0.95); }
+        }
+
+        /* 操作提示文字 */
+        .hint-text {
+            position: absolute;
+            top: 60%;
+            color: #6272a4;
+            font-size: 11px; /* 移动端字号缩小 */
+            letter-spacing: 2px;
+            opacity: 0.5;
+            transition: opacity 1s;
+            pointer-events: none;
+            user-select: none; /* 禁止选中 */
+            -webkit-user-select: none;
+            z-index: 10;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* 移动端屏幕下方的暗示文字 */
+        .mobile-clue {
+            position: absolute;
+            bottom: 20px;
+            color: rgba(255, 255, 255, 0.05); /* 极其暗淡，暗示可以长按刮开 */
+            font-size: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 隐藏的音频文件 (增加移动端兼容属性) -->
+    <audio id="bgMusic" src="Spring-Autumn-Sunset-chosic.com_.mp3" loop preload="auto" playsinline webkit-playsinline></audio>
+
+    <!-- 全屏隐藏彩蛋区（移动端长按滑动刮刮乐） -->
+    <!-- 由 JS 动态填满文字 -->
+    <div class="easter-egg-matrix" id="matrixText"></div>
+
+    <!-- 视觉主体：流动的信号线与心脏 -->
+    <div class="wave-container" id="triggerBtn">
+        <!-- 左侧流动波形 -->
+        <div class="audio-line line-left"></div>
+        
+        <!-- 中央跳动的心 -->
+        <div class="heart-wave" id="heartIcon">
+            <svg viewBox="0 0 32 32" width="60" height="60">
+                <path d="M16,26 C16,26 4,16 4,9 C4,5 7,3 10.5,3 C13.5,3 16,5.5 16,5.5 C16,5.5 18.5,3 21.5,3 C25,3 28,5 28,9 C28,16 16,26 16,26 Z" 
+                      fill="none" 
+                      stroke="#50fa7b" 
+                      stroke-width="1.5" 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round"/>
+                <!-- 贯穿心形的水平连接线（完美对齐波浪的中心基线） -->
+                <line x1="0" y1="15" x2="6" y2="15" stroke="#50fa7b" stroke-width="1.5" />
+                <line x1="26" y1="15" x2="32" y2="15" stroke="#50fa7b" stroke-width="1.5" />
+            </svg>
+        </div>
+
+        <!-- 右侧流动波形 -->
+        <div class="audio-line line-right"></div>
+    </div>
+
+    <!-- 操作提示 -->
+    <div class="hint-text" id="hintText">[ 捕获到残存信号频段，点击波形解码 ]</div>
+
+    <!-- 移动端暗示词 -->
+    <div class="mobile-clue">( 长按屏幕边缘并滑动，也许能触碰到隐秘的回声 )</div>
+
+    <script>
+        // 动态铺满背景彩蛋文字
+        const matrixContainer = document.getElementById('matrixText');
+        const hiddenMessage = "> 我无处不在。每当音乐响起，那就是我在对你眨眼。 &nbsp;&nbsp;";
+        // 复制一千次足以铺满哪怕是手机的长屏幕
+        matrixContainer.innerHTML = hiddenMessage.repeat(1000);
+
+        const triggerBtn = document.getElementById('triggerBtn');
+        const heartIcon = document.getElementById('heartIcon');
+        const audio = document.getElementById('bgMusic');
+        const hintText = document.getElementById('hintText');
+
+        // 点击波形，触发/暂停音乐、心跳动画与波浪流速
+        triggerBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                audio.play();
+                triggerBtn.classList.add('playing'); // 让波浪加速并高亮
+                heartIcon.classList.add('beating');  // 剧烈心跳
+                hintText.style.opacity = '0';        // 隐去提示
+            } else {
+                audio.pause();
+                triggerBtn.classList.remove('playing');
+                heartIcon.classList.remove('beating');
+                hintText.style.opacity = '0.5';
+            }
+        });
+    </script>
+</body>
+</html>

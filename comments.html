@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>单曲评论区 - 极夜的回声</title>
+    <style>
+        /* ================= 基础重置 ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background: #333; 
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { display: none; }
+
+        /* ================= 手机模拟容器 ================= */
+        .phone-frame {
+            width: 375px; 
+            height: 812px; 
+            background: #1a1a1a; /* 网易云深色模式背景 */
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 40px;
+            border: 8px solid #111;
+            display: flex;
+            flex-direction: column;
+            color: #d0d0d0;
+        }
+
+        @media (max-width: 400px) {
+            .phone-frame { width: 100vw; height: 100vh; border-radius: 0; border: none; }
+        }
+
+        /* ================= 移动端顶部导航 ================= */
+        .mobile-header {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            padding-top: 10px;
+            background-color: #1a1a1a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .back-btn { font-size: 26px; color: #fff; cursor: pointer; line-height: 1; }
+        .header-title { font-size: 17px; font-weight: 500; color: #fff; letter-spacing: 1px; }
+        .header-share { font-size: 20px; color: #fff; cursor: pointer; }
+
+        /* ================= 评论滑动区 ================= */
+        .comments-scroll {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 70px; /* 为底部输入框留出空间 */
+        }
+
+        /* 置顶标签区 */
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            padding: 15px 16px 5px;
+        }
+
+        /* ================= 单条评论布局 ================= */
+        .comment-item {
+            display: flex;
+            padding: 15px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* 左侧头像 */
+        .avatar-wrap {
+            margin-right: 12px;
+        }
+        .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background-size: cover; background-position: center;
+            background-color: #444; flex-shrink: 0;
+        }
+        
+        /* 头像占位色 */
+        .avatar.syd { background: linear-gradient(135deg, #2c3e50, #000000); }
+        .avatar.cyq { background: linear-gradient(135deg, #c33764, #1d2671); }
+        .avatar.user1 { background-color: #5b86e5; }
+        .avatar.user2 { background-color: #36d1dc; }
+
+        /* 右侧内容主体 */
+        .comment-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 评论头部：用户名、时间、点赞 */
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .user-info { display: flex; flex-direction: column; }
+        
+        /* 核心改动：加密跳转挂载在用户名上 */
+        .username { 
+            font-size: 13px; color: #8b9eab; margin-bottom: 2px; 
+            display: inline-block; cursor: pointer;
+        }
+        .username.owner { color: #58a6ff; } /* 楼主高亮 */
+        
+        .time { font-size: 10px; color: #666; }
+
+        .like-btn {
+            font-size: 11px; color: #888;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .like-btn .icon { font-size: 14px; }
+
+        /* 评论正文 */
+        .content { 
+            font-size: 15px; color: #e0e0e0; line-height: 1.5; 
+            margin-bottom: 10px; word-break: break-all; text-align: justify;
+        }
+
+        /* 评论配图 */
+        .comment-image {
+            max-width: 180px; max-height: 180px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        /* ================= 楼中楼回复样式 ================= */
+        .reply-box {
+            background: rgba(255,255,255,0.04);
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+        .reply-item { margin-bottom: 6px; line-height: 1.5;}
+        .reply-item:last-child { margin-bottom: 0; }
+        
+        .replier-name { color: #58a6ff; cursor: pointer; font-weight: 500;}
+        .reply-text { color: #ccc; }
+        
+        .reply-time { font-size: 10px; color: #666; margin-top: 4px; display: block;}
+
+        .reply-more {
+            font-size: 13px; color: #58a6ff; margin-top: 8px; display: inline-block;
+        }
+
+        /* ================= 底部输入栏 ================= */
+        .bottom-input-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            height: 60px; background-color: #1a1a1a;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; padding: 0 16px; gap: 15px;
+            padding-bottom: 10px; /* 适配全面屏底部 */
+        }
+        
+        .input-box {
+            flex: 1; height: 36px; background: rgba(255,255,255,0.08);
+            border-radius: 18px; display: flex; align-items: center; padding: 0 15px;
+            font-size: 14px; color: #888;
+        }
+        
+        .action-icons { display: flex; gap: 15px; font-size: 22px; color: #ccc; }
+
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        
+        <!-- 移动端顶部导航 -->
+        <div class="mobile-header">
+            <div class="back-btn" onclick="history.back()">‹</div>
+            <div class="header-title">评论 (9,204)</div>
+            <div class="header-share">⍈</div>
+        </div>
+
+        <div class="comments-scroll">
+            
+            <div class="section-title">最热评论</div>
+
+            <!-- ================= 置顶：男主与女主的初次相遇 ================= -->
+            <div class="comment-item">
+                <div class="avatar-wrap"><div class="avatar syd"></div></div>
+                <div class="comment-main">
+                    <div class="comment-header">
+                        <div class="user-info">
+                            <!-- 点击极夜跳转 -->
+                            <div class="username" onclick="sysRedirect(event, '0x7379647779792e68746d6c')">极夜</div>
+                            <div class="time">2025年11月18日 江城</div>
+                        </div>
+                        <div class="like-btn">1.2w <span class="icon">♡</span></div>
+                    </div>
+                    
+                    <div class="content">
+                        胃痛得睡不着，稿子像一团乱麻卡在脑子里，半个字都敲不出来。窗外好黑，突然觉得活着真的好累，好想就这么闭上眼睛，再也不用醒来。
+                    </div>
+
+                    <!-- 楼中楼回复区 -->
+                    <div class="reply-box">
+                        <!-- 屿秋的回复 -->
+                        <div class="reply-item">
+                            <span class="replier-name" onclick="sysRedirect(event, '0x6379717779792e68746d6c')">屿秋</span>
+                            <span class="reply-text">：你好，陌生人。生活不是只有漫长的极夜，极夜的尽头总会等来极光。送你一张我上次去冰岛拍的极光，愿你的生活里永远有光，别轻易说放弃。</span>
+                            <br><img src="网易云.png" class="comment-image" style="margin-top: 6px; max-width: 140px;" alt="极光星空图">
+                            <span class="reply-time">2025-11-18 03:26</span>
+                        </div>
+
+                        <!-- 极夜的回复 -->
+                        <div class="reply-item" style="margin-top: 10px;">
+                            <span class="replier-name" onclick="sysRedirect(event, '0x7379647779792e68746d6c')">极夜</span>
+                            <span class="reply-text" style="color: #8b9eab; margin: 0 2px;">回复</span>
+                            <span class="replier-name" onclick="sysRedirect(event, '0x6379717779792e68746d6c')">屿秋</span>
+                            <span class="reply-text">：谢谢你……这片极光真的好美，看着它好像胃都没那么疼了。可以发一份原版大图给我吗？我想把它设成网易云的主页背景。</span>
+                        </div>
+
+                        <!-- 屿秋的回复 -->
+                        <div class="reply-item" style="margin-top: 10px;">
+                            <span class="replier-name" onclick="sysRedirect(event, '0x6379717779792e68746d6c')">屿秋</span>
+                            <span class="reply-text" style="color: #8b9eab; margin: 0 2px;">回复</span>
+                            <span class="replier-name" onclick="sysRedirect(event, '0x7379647779792e68746d6c')">极夜</span>
+                            <span class="reply-text">：当然可以。原图画质很大，直接在这里发会被系统压缩。如果不介意的话，我加你微信发给你？</span>
+                        </div>
+                        
+                        <div class="reply-more">45条回复 〉</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= 其他路人网友的评论 ================= -->
+            <div class="comment-item">
+                <div class="avatar-wrap"><div class="avatar user1"></div></div>
+                <div class="comment-main">
+                    <div class="comment-header">
+                        <div class="user-info">
+                            <div class="username">熬夜会变秃</div>
+                            <div class="time">2026年3月12日 杭城</div>
+                        </div>
+                        <div class="like-btn">3402 <span class="icon">♡</span></div>
+                    </div>
+                    <div class="content">纯音乐最能杀人，也最能救人。这首歌的低频好像能直接共振到心里去。</div>
+                </div>
+            </div>
+
+            <div class="comment-item">
+                <div class="avatar-wrap"><div class="avatar user2"></div></div>
+                <div class="comment-main">
+                    <div class="comment-header">
+                        <div class="user-info">
+                            <div class="username">星屑拾荒者</div>
+                            <div class="time">2026年6月10日 蓉城</div>
+                        </div>
+                        <div class="like-btn">892 <span class="icon">♡</span></div>
+                    </div>
+                    <div class="content">刚刚刷到楼上那条神级搭讪。我就想问问楼主（极夜），后来那个发星空图的小哥哥加你微信了吗？你们俩在一起了吗？[吃瓜][吃瓜]</div>
+                </div>
+            </div>
+
+            <div class="comment-item">
+                <div class="avatar-wrap"><div class="avatar" style="background-color: #e67e22;"></div></div>
+                <div class="comment-main">
+                    <div class="comment-header">
+                        <div class="user-info">
+                            <div class="username">Delete_Memories</div>
+                            <div class="time">2026年7月1日 江城</div>
+                        </div>
+                        <div class="like-btn">415 <span class="icon">♡</span></div>
+                    </div>
+                    <div class="content">不知道为什么，今天再来听这首歌，总觉得好像失去了什么很重要的东西。</div>
+                </div>
+            </div>
+
+            <div style="text-align:center; color:#666; font-size:12px; padding:20px 0;">到底了</div>
+
+        </div>
+
+        <!-- ================= 底部写评论栏 ================= -->
+        <div class="bottom-input-bar">
+            <div class="input-box">写评论...</div>
+            <div class="action-icons">
+                <span>@</span>
+                <span>😊</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= 隐藏的路由解密脚本 ================= -->
+    <script>
+        // 挂载在用户名上的隐秘重定向系统
+        function sysRedirect(event, token) {
+            event.preventDefault(); // 阻止默认行为
+            
+            // 安全校验：确认是否为内部十六进制令牌
+            if (!token || !token.startsWith('0x')) {
+                return;
+            }
+            
+            // Hex 逆向解密引擎，还原出目标 html
+            let destUrl = '';
+            let hexSequence = token.substring(2);
+            for (let i = 0; i < hexSequence.length; i += 2) {
+                destUrl += String.fromCharCode(parseInt(hexSequence.substr(i, 2), 16));
+            }
+            
+            // 移动端通常在当前标签页打开
+            window.location.href = destUrl;
+        }
+    </script>
+</body>
+</html>
